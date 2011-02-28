@@ -1,0 +1,415 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Defines the shipping system and checkout integration.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_shipping_permission() {
+  return array(
+    'administer shippings' => array(
+      'title' => t('Administer shippings'),
+      'description' => t('Allows users to perform any shipping action for any order.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Returns an array of payment methods defined by enabled modules.
+ *
+ * @return
+ *   An associative array of payment method objects keyed by the method_id.
+ */
+function commerce_shipping_methods() {
+  $shipping_methods = &drupal_static(__FUNCTION__);
+
+  // If the shipping methods haven't been defined yet, do so now.
+  if (!isset($shipping_methods)) {
+    $shipping_methods = module_invoke_all('commerce_shipping_method_info');
+    drupal_alter('commerce_shipping_method_info', $shipping_methods);
+
+    foreach ($shipping_methods as $method_id => &$shipping_method) {
+      $defaults = array(
+        'method_id' => $method_id,
+        'base' => $method_id,
+        'title' => '',
+        'description' => '',
+      );
+
+      $shipping_method += $defaults;
+
+      // Default the display title to the title if necessary.  The display title
+      // is used in instances where the payment method has an official name used
+      // as the title (i.e. UPS) but a different method of display on
+      // selection forms (like some text and a set of images).
+      if (empty($shipping_method['display_title'])) {
+        $shipping_method['display_title'] = $shipping_method['title'];
+      }
+
+      // Default the short title to the title if necessary.  Like the display
+      // title, the short title is an alternate way of displaying the title to
+      // the user consisting of plain text but with unnecessary information
+      // stripped off.  The shipping method title might be UPS Express as it
+      // distinguishes itself from other UPS shipping services, but you would
+      // only want to display UPS to the customer as their means of shipment.
+      if (empty($shipping_methods[$method_id]['short_title'])) {
+        $shipping_method['short_title'] = $shipping_method['title'];
+      }
+
+      // Merge in default callbacks.
+      foreach (array('settings_form', 'calculate_shipping', 'submit_form', 'submit_form_validate', 'submit_form_submit') as $callback) {
+        if (!isset($shipping_method['callbacks'][$callback])) {
+          $shipping_method['callbacks'][$callback] = $shipping_method['base'] . '_' . $callback;
+        }
+      }
+    }
+  }
+
+  return $shipping_methods;
+}
+
+/**
+ * Returns the specified callback for the given payment method if it exists.
+ *
+ * @param $shipping_method
+ *   The payment method object.
+ * @param $callback
+ *   The callback function to return, one of:
+ *   - settings_form
+ *
+ * @return
+ *   A string containing the name of the callback function or FALSE if it could
+ *     not be found.
+ */
+function commerce_shipping_method_callback($shipping_method, $callback) {
+  // If the specified callback function exists, return it.
+  if (!empty($shipping_method['callbacks'][$callback]) &&
+      function_exists($shipping_method['callbacks'][$callback])) {
+    return $shipping_method['callbacks'][$callback];
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
+/**
+ * Get the shipping method object for a specific shipping method.
+ *
+ * @return shipping method object if it exist false otherwise.
+ */
+function commerce_shipping_method_load($shipping_method) {
+  $shipping_methods = commerce_shipping_methods();
+  return isset($shipping_methods[$shipping_method]) ? $shipping_methods[$shipping_method] : FALSE;
+}
+
+/**
+ * Implements hook_commerce_line_item_info().
+ */
+function commerce_shipping_commerce_line_item_info() {
+  return array(
+    'shipping' => array(
+      'type' => 'shipping',
+      'name' => t('Shipping'),
+      'description' => t('Reference a shipping type with info about price and delivery.'),
+      'add_form_submit_value' => t('Add shipping'),
+      'base' => 'commerce_shipping_line_item',
+      'callbacks' => array(
+        'configuration' => 'commerce_shipping_configure_line_item',
+      ),
+    ),
+  );
+}
+
+/**
+ * Ensures the shipping line item type contains a field for shippong method.
+ *
+ * This function is called by the line item module when it is enabled or this
+ * module is enabled. It invokes this function using the configuration_callback
+ * as specified above.
+ */
+function commerce_shipping_configure_line_item() {
+  // TODO: Maybe we should create our own field type to reference the shipping
+  // method. Since we only want to store it's name, list_text should sufice.
+
+  $field = field_info_field('shipping_method');
+  $instance = field_info_instance('commerce_line_item', 'shipping', 'shipping_method');
+
+  if (empty($field)) {
+    $field = array(
+      'cardinality' => 1,
+      'entity_types' => array('commerce_line_item'),
+      'translatable' => FALSE,
+      'locked' => TRUE,
+      'field_name' => 'shipping_method',
+      'type' => 'list_text',
+      'settings' => array(
+        'allowed_values_function' => 'commerce_shipping_get_shipping_methods_options',
+      ),
+
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($instance)) {
+    $instance = array(
+      'field_name' => 'shipping_method',
+      'entity_type' => 'commerce_line_item',
+      'bundle' => 'shipping',
+      'label' => t('Shipping method'),
+      'required' => TRUE,
+      'settings' => array(),
+
+      'display' => array(
+        'display' => array(
+          'label' => 'hidden',
+        ),
+      ),
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Return an array of enabled shipping methods formatted as an options array
+ *   used in FAPI.
+ *
+ * @return array of shipping methods.
+ */
+function commerce_shipping_get_shipping_methods_options() {
+  // Create a fake order that can be used to attach the shipping methods to.
+  $order = new stdClass();
+  $order->shipping_methods = array();
+  rules_invoke_all('commerce_shipping_methods', $order);
+  $options = array();
+  foreach ($order->shipping_methods as $instance_id => $shipping_method) {
+    $options[$instance_id] = $shipping_method['label'];
+  }
+
+  return $options;
+}
+
+/**
+ * Returns an appropriate title for this line item.
+ */
+function commerce_shipping_line_item_title($line_item) {
+  // Try to get the value from the selected shipping method
+  if (isset($line_item->shipping_method[LANGUAGE_NONE][0]['value'])) {
+    $shipping_method = commerce_shipping_method_load($line_item->shipping_method[LANGUAGE_NONE][0]['value']);
+    if (!empty($shipping_method)) {
+      return $shipping_method['title'];
+    }
+  }
+  return t('Unknown shipping method');
+}
+
+
+/**
+ * Returns the elements necessary to add a product line item through a line item
+ *   manager widget.
+ */
+function commerce_shipping_line_item_add_form($form_state) {
+  $order = $form_state['commerce_order'];
+  $form = array();
+
+  $form['shipping_method'] = array(
+    '#type' => 'select',
+    '#title' => t('Shipping method'),
+    '#options' => commerce_shipping_get_shipping_methods_options(),
+  );
+
+  // Establish defaults for currency code.
+  $default_currency_code = commerce_default_currency();
+  if ($balance = commerce_payment_order_balance($order)) {
+    $default_currency_code = $balance['currency_code'];
+  }
+
+  $form['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Amount'),
+    '#default_value' => $default_amount,
+    '#size' => 10,
+  );
+
+  // Build a currency options list from all enabled currencies.
+  $options = array();
+  foreach (commerce_currencies(TRUE) as $currency_code => $currency) {
+    $options[$currency_code] = check_plain($currency->code);
+  }
+
+  $form['currency_code'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency'),
+    '#options' => $options,
+    '#default_value' => $default_currency_code,
+  );
+
+  return $form;
+}
+
+/**
+ * Adds the selected product information to a line item added via a line item
+ *   manager widget.
+ *
+ * @param $line_item
+ *   The newly created line item object.
+ * @param $element
+ *   The array representing the widget form element.
+ * @param $form_state
+ *   The present state of the form upon the latest submission.
+ * @param $form
+ *   The actual form array.
+ *
+ * @return
+ *   NULL if all is well or an error message if something goes wrong.
+ */
+function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$form_state, $form) {
+  $order = $form_state['commerce_order'];
+  // Load the selected shipping method.
+  $shipping_method = commerce_shipping_method_instance_load($element['actions']['shipping_method']['#value']);
+
+  // Populate the line item with the product data.
+  $line_item->shipping_method = array(
+    LANGUAGE_NONE => array(
+      array(
+        'value' => $shipping_method->method_id,
+      ),
+    ),
+  );
+
+  $shipping_values = $form_state['values']['line_items'][LANGUAGE_NONE]['actions'];  
+  $line_item->commerce_unit_price = array(
+    LANGUAGE_NONE => array(
+      array(
+        'amount' => $shipping_values['amount'],
+        'currency_code' => $shipping_values['currency_code'],
+      )
+    )
+  );
+}
+
+/**
+ * Returns a payment method instance ID given a shipping method ID and the Rule
+ *   containing an enabling action with settings.
+ *
+ * @param $method_id
+ *   The ID of the payment method.
+ * @param $rule
+ *   The Rules configuration object used to provide settings for the method.
+ *
+ * @return
+ *   A string used as the shipping method instance ID.
+ */
+function commerce_shipping_method_instance_id($method_id, $rule) {
+  $parts = array($method_id, $rule->name);
+  return implode('|', $parts);
+}
+
+/**
+ * Returns a payment method instance object which includes the settings specific
+ *   to the context of the instance.
+ *
+ * @param $instance_id
+ *   A payment method instance ID in the form of a pipe delimited string
+ *     containing the method_id and the enabling Rule's name.
+ *
+ * @return
+ *   The payment method instance object which is identical to the payment method
+ *     object with the addition of the settings array.
+ */
+function commerce_shipping_method_instance_load($instance_id) {
+  // Return FALSE if there is no pipe delimeter in the instance ID.
+  if (strpos($instance_id, '|') === FALSE) {
+    return FALSE;
+  }
+
+  // Explode the method key into its component parts.
+  list($method_id, $rule_name) = explode('|', $instance_id);
+
+  // Return FALSE if we didn't receive a proper instance ID.
+  if (empty($method_id) || empty($rule_name)) {
+    return FALSE;
+  }
+
+  // First load the payment method and add the instance ID.
+  $payment_method = commerce_shipping_method_load($method_id);
+  $payment_method['instance_id'] = $instance_id;
+
+  // Then load the Rule configuration that enables the method.
+  $rule = rules_config_load($rule_name);
+
+  // Iterate over its actions to find one with the matching element ID and pull
+  // its settings into the payment method object.
+  $payment_method['settings'] = array();
+
+  foreach ($rule->actions() as $action) {
+    if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
+      if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['settings'])) {
+        $payment_method['settings'] = $action->settings['shipping_method']['settings'];
+      }
+    }
+  }
+
+  return $payment_method;
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_shipping_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['commerce_shipping'] = array(
+    'title' => t('Shipping'),
+    'page' => 'checkout',
+    'locked' => TRUE,
+    'file' => 'includes/commerce_shipping.checkout_pane.inc',
+    'base' => 'commerce_shipping_pane',
+    'weight' => 2,
+  );
+
+  return $checkout_panes;
+}
+
+/**
+ * Creates a new product line item populated with the proper product values.
+ *
+ * @param $shipping_method
+ *   The fully loaded shipping_method that want to create a new line item.
+ * @param $language
+ *   Optionally specify the language for the line item.
+ *
+ * @return
+ *   Line item object with default values.
+ */
+function commerce_shipping_line_item_new($shipping_method, $language = LANGUAGE_NONE) {
+  // Create the new line item.
+  $line_item = commerce_line_item_new('shipping');
+
+  $line_item->line_item_label = $shipping_method->display_title;
+  $line_item->quantity = 1;
+
+  $line_item->shipping_method = array(
+    $language => array(
+      array(
+        'value' => $shipping_method->method_id,
+      ),
+    ),
+  );
+
+  return $line_item;
+}
+
+/*
+ * Implements hook_views_api().
+ */
+function commerce_shipping_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'commerce_shipping') . '/includes/views',
+  );
+}
