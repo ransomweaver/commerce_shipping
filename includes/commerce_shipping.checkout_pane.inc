@@ -143,22 +143,15 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
  */
 function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
   // In case this order already have shipping line items, we need to remove them.
-  if (!empty($order->commerce_line_items[LANGUAGE_NONE])) {
-    $line_item_ids = array();
-    // Get all line items ids.
-    foreach ($order->commerce_line_items[LANGUAGE_NONE] as $line_item_reference) {
-      $line_item_ids[] = $line_item_reference['line_item_id'];
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $line_items = array();
+  foreach ($order_wrapper->commerce_line_items as $key => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() != 'shipping') {
+      $line_items[] = $line_item_wrapper->value();
+      //$order_wrapper->commerce_line_items->offsetUnset($key);
     }
-    $non_shipping_line_items = array();
-    // Find the shipping line items.
-    foreach (commerce_line_item_load_multiple($line_item_ids) as $line_item) {
-      if ($line_item->type != 'shipping') {
-        $non_shipping_line_items[] = array('line_item_id' => $line_item->line_item_id);
-      }
-    }
-    // Replace the line items.
-    $order->commerce_line_items[LANGUAGE_NONE] = $non_shipping_line_items;
   }
+  $order_wrapper->commerce_line_items = $line_items;
 
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
@@ -184,39 +177,24 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
       if (is_array($shipping_line_items)) {
         foreach ($shipping_line_items as $shipping_line_item) {
           $line_item = commerce_shipping_line_item_new($shipping_method);
+          $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
           if (is_numeric($shipping_line_item)) {
-            $line_item->commerce_unit_price = array(
-              LANGUAGE_NONE => array(
-                array(
-                  'amount' => $shipping_line_item,
-                  'currency_code' => $default_currency_code,
-                )
-              )
-            );
-            commerce_line_item_save($line_item);
-            $order->commerce_line_items[LANGUAGE_NONE][] = array(
-              'line_item_id' => $line_item->line_item_id,
-            );
+            $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
+            $line_item_wrapper->commerce_unit_price->currency_code = $default_currency_code;
+            $line_item_wrapper->save();
+            $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
           }
           elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
-            $line_item->commerce_unit_price = array(
-              LANGUAGE_NONE => array(
-                array(
-                  'amount' => $shipping_line_item['amount'],
-                  'currency_code' => isset($shipping_line_item['currence_code']) ? $shipping_line_item['currence_code'] : $default_currency_code,
-                )
-              )
-            );
+            $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
+            $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currence_code']) ? $shipping_line_item['currence_code'] : $default_currency_code;
             if (isset($shipping_line_item['label'])) {
-              $line_item->line_item_label = $shipping_line_item['label'];
+              $line_item_wrapper->line_item_label = $shipping_line_item['label'];
             }
             if (isset($shipping_line_item['quantity'])) {
-              $line_item->quantity = $shipping_line_item['quantity'];
+              $line_item_wrapper->quantity = $shipping_line_item['quantity'];
             }
-            commerce_line_item_save($line_item);
-            $order->commerce_line_items[LANGUAGE_NONE][] = array(
-              'line_item_id' => $line_item->line_item_id,
-            );
+            $line_item_wrapper->save();
+            $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
           }
         }
       }

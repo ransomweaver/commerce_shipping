@@ -366,7 +366,7 @@ function commerce_shipping_commerce_checkout_pane_info() {
  * @return
  *   Line item object with default values.
  */
-function commerce_shipping_line_item_new($shipping_method, $language = LANGUAGE_NONE) {
+function commerce_shipping_line_item_new($shipping_method) {
   // Create the new line item.
   $line_item = commerce_line_item_new('shipping');
 
