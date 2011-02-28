@@ -110,7 +110,7 @@ function commerce_shipping_method_load($shipping_method) {
 /**
  * Implements hook_commerce_line_item_info().
  */
-function commerce_shipping_commerce_line_item_info() {
+function commerce_shipping_commerce_line_item_type_info() {
   return array(
     'shipping' => array(
       'type' => 'shipping',
@@ -197,9 +197,10 @@ function commerce_shipping_get_shipping_methods_options() {
  * Returns an appropriate title for this line item.
  */
 function commerce_shipping_line_item_title($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   // Try to get the value from the selected shipping method
-  if (isset($line_item->shipping_method[LANGUAGE_NONE][0]['value'])) {
-    $shipping_method = commerce_shipping_method_load($line_item->shipping_method[LANGUAGE_NONE][0]['value']);
+  if ($line_item_wrapper->shipping_method->value()) {
+    $shipping_method = commerce_shipping_method_load($line_item_wrapper->shipping_method->value());
     if (!empty($shipping_method)) {
       return $shipping_method['title'];
     }
@@ -222,12 +223,6 @@ function commerce_shipping_line_item_add_form($form_state) {
     '#options' => commerce_shipping_get_shipping_methods_options(),
   );
 
-  // Establish defaults for currency code.
-  $default_currency_code = commerce_default_currency();
-  if ($balance = commerce_payment_order_balance($order)) {
-    $default_currency_code = $balance['currency_code'];
-  }
-
   $form['amount'] = array(
     '#type' => 'textfield',
     '#title' => t('Amount'),
@@ -238,21 +233,21 @@ function commerce_shipping_line_item_add_form($form_state) {
   // Build a currency options list from all enabled currencies.
   $options = array();
   foreach (commerce_currencies(TRUE) as $currency_code => $currency) {
-    $options[$currency_code] = check_plain($currency->code);
+    $options[$currency_code] = check_plain($currency['code']);
   }
 
   $form['currency_code'] = array(
     '#type' => 'select',
     '#title' => t('Currency'),
     '#options' => $options,
-    '#default_value' => $default_currency_code,
+    '#default_value' => commerce_default_currency(),
   );
 
   return $form;
 }
 
 /**
- * Adds the selected product information to a line item added via a line item
+ * Adds the selected shippng information to a line item added via a line item
  *   manager widget.
  *
  * @param $line_item
@@ -269,27 +264,12 @@ function commerce_shipping_line_item_add_form($form_state) {
  */
 function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$form_state, $form) {
   $order = $form_state['commerce_order'];
-  // Load the selected shipping method.
-  $shipping_method = commerce_shipping_method_instance_load($element['actions']['shipping_method']['#value']);
 
   // Populate the line item with the product data.
-  $line_item->shipping_method = array(
-    LANGUAGE_NONE => array(
-      array(
-        'value' => $shipping_method->method_id,
-      ),
-    ),
-  );
-
-  $shipping_values = $form_state['values']['line_items'][LANGUAGE_NONE]['actions'];  
-  $line_item->commerce_unit_price = array(
-    LANGUAGE_NONE => array(
-      array(
-        'amount' => $shipping_values['amount'],
-        'currency_code' => $shipping_values['currency_code'],
-      )
-    )
-  );
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $line_item_wrapper->shipping_method = $element['actions']['shipping_method']['#value'];
+  $line_item_wrapper->commerce_unit_price->amount = $element['actions']['amount']['#value'];
+  $line_item_wrapper->commerce_unit_price->currency_code = $element['actions']['currency_code']['#value'];
 }
 
 /**
@@ -390,16 +370,11 @@ function commerce_shipping_line_item_new($shipping_method, $language = LANGUAGE_
   // Create the new line item.
   $line_item = commerce_line_item_new('shipping');
 
-  $line_item->line_item_label = $shipping_method->display_title;
+  $line_item->line_item_label = $shipping_method['display_title'];
   $line_item->quantity = 1;
 
-  $line_item->shipping_method = array(
-    $language => array(
-      array(
-        'value' => $shipping_method->method_id,
-      ),
-    ),
-  );
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $line_item->shipping_method = $shipping_method['method_id'];
 
   return $line_item;
 }
