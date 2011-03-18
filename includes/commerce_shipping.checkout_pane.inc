@@ -181,8 +181,6 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
           if (is_numeric($shipping_line_item)) {
             $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
             $line_item_wrapper->commerce_unit_price->currency_code = $default_currency_code;
-            $line_item_wrapper->save();
-            $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
           }
           elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
             $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
@@ -193,9 +191,15 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
             if (isset($shipping_line_item['quantity'])) {
               $line_item_wrapper->quantity = $shipping_line_item['quantity'];
             }
-            $line_item_wrapper->save();
-            $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
           }
+          $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+            $line_item_wrapper->commerce_unit_price->value(),
+            'base_price',
+            $line_item_wrapper->commerce_unit_price->value(),
+            TRUE
+          );
+          $line_item_wrapper->save();
+          $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
         }
       }
     }
