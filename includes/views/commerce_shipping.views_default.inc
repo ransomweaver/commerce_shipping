@@ -99,7 +99,7 @@ function commerce_shipping_views_default_views() {
   $handler->display->display_options['fields']['commerce_unit_price']['table'] = 'field_data_commerce_unit_price';
   $handler->display->display_options['fields']['commerce_unit_price']['field'] = 'commerce_unit_price';
   $handler->display->display_options['fields']['commerce_unit_price']['relationship'] = 'commerce_line_items_line_item_id';
-  $handler->display->display_options['fields']['commerce_unit_price']['label'] = 'Pris';
+  $handler->display->display_options['fields']['commerce_unit_price']['label'] = 'Price';
   $handler->display->display_options['fields']['commerce_unit_price']['alter']['alter_text'] = 0;
   $handler->display->display_options['fields']['commerce_unit_price']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['commerce_unit_price']['alter']['absolute'] = 0;
