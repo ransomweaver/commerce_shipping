@@ -334,6 +334,9 @@ function commerce_shipping_method_instance_load($instance_id) {
 
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
+      $shipping_method['shipping_label'] =
+        isset($action->settings['shipping_method']['shipping_label']) ?
+        $action->settings['shipping_method']['shipping_label'] : '';
       if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['settings'])) {
         $shipping_method['settings'] = $action->settings['shipping_method']['settings'];
       }

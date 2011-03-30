@@ -31,7 +31,9 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   foreach ($order->shipping_methods as $instance_id => $method_info) {
     // Ensure we've received a valid shipping method.
     if ($shipping_method = commerce_shipping_method_load($method_info['method_id'])) {
-      $options[$instance_id] = $shipping_method['display_title'];
+      $method_instance = commerce_shipping_method_instance_load($instance_id);
+      $options[$instance_id] = !empty($method_instance['shipping_label']) ?
+        $method_instance['shipping_label'] : $shipping_method['display_title'];
     }
   }
 

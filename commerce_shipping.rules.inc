@@ -111,18 +111,19 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
     // If the specified shipping method exists...
     if ($shipping_method = commerce_shipping_method_load($info['shipping_method'])) {
       $form[$name]['method_id'] = array('#type' => 'value', '#value' => $info['shipping_method']);
-
-      // If the payment method has a settings callback...
+      $form[$name]['shipping_label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Shipping label'),
+        '#description' => t('Customise the shipping label as it would appear for customers'),
+        '#default_value' => isset($settings[$name]['shipping_label']) ? $settings[$name]['shipping_label'] : '',
+      );
+      // If the shipping method has a settings callback...
       if ($callback = commerce_shipping_method_callback($shipping_method, 'settings_form')) {
         // Prepare an array of shipping method settings defaults.
         $method_settings = !empty($settings[$name]) ? $settings[$name]['settings'] : array();
 
         // Add the settings form elements to the action form.
         $form[$name]['settings'] = $callback($method_settings);
-      }
-      else {
-        // Otherwise add an appropriate message.
-        $form[$name]['settings']['no_settings']['#markup'] = t('No settings for this shipping method.');
       }
     }
     else {
