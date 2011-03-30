@@ -22,7 +22,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   $order->shipping_methods = array();
   rules_invoke_all('commerce_shipping_methods', $order);
 
-  // Sort the payment methods array by the enabling Rules' weight values.
+  // Sort the shipping methods array by the enabling Rules' weight values.
   uasort($order->shipping_methods, 'drupal_sort_weight');
 
   // Generate an array of shipping method options for the checkout form.

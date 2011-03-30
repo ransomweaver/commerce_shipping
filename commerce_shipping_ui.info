@@ -12,4 +12,4 @@ core = 7.x
 files[] = commerce_shipping_ui.module
 
 ; Views include
-files[] = includes/views/commerce_payment_ui.views_default.inc
+files[] = includes/views/commerce_shipping_ui.views_default.inc

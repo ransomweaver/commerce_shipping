@@ -31,7 +31,7 @@ function commerce_shipping_rules_event_info() {
 function commerce_shipping_rules_action_info() {
   $actions = array();
 
-  // Add an action for each available payment method.
+  // Add an action for each available shipping method.
   foreach (commerce_shipping_methods() as $shipping_method) {
     $actions['commerce_shipping_enable_' . $shipping_method['method_id']] = array(
       'label' => t('Enable shipping method: @method', array('@method' => $shipping_method['title'])),
@@ -65,7 +65,7 @@ function commerce_shipping_enable_method($order, $shipping_method, $action_setti
     $rule = $rule->parentElement();
   }
 
-  // Initialize variables for the payment method ID and settings.
+  // Initialize variables for the shipping method ID and settings.
   if (is_array($shipping_method)) {
     $method_id = $shipping_method['method_id'];
     $settings = !empty($shipping_method['settings']) ? $shipping_method['settings'] : array();
@@ -74,7 +74,7 @@ function commerce_shipping_enable_method($order, $shipping_method, $action_setti
     $method_id = $shipping_method;
     $settings = array();
   }
-  // Create a unique key for the instance of the payment method represented by
+  // Create a unique key for the instance of the shipping method represented by
   // this action.
   $instance_id = commerce_shipping_method_instance_id($method_id, $rule);
 
@@ -100,7 +100,7 @@ function commerce_shipping_rules_data_info() {
 }
 
 /**
- * Adds a payment method settings form to the enabling action.
+ * Adds a shipping method settings form to the enabling action.
  */
 class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirectInputFormInterface {
   public static function getDefaultMode() {
@@ -108,13 +108,13 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
   }
 
   public static function inputForm($name, $info, $settings, RulesPlugin $element) {
-    // If the specified payment method exists...
+    // If the specified shipping method exists...
     if ($shipping_method = commerce_shipping_method_load($info['shipping_method'])) {
       $form[$name]['method_id'] = array('#type' => 'value', '#value' => $info['shipping_method']);
 
       // If the payment method has a settings callback...
       if ($callback = commerce_shipping_method_callback($shipping_method, 'settings_form')) {
-        // Prepare an array of payment method settings defaults.
+        // Prepare an array of shipping method settings defaults.
         $method_settings = !empty($settings[$name]) ? $settings[$name]['settings'] : array();
 
         // Add the settings form elements to the action form.

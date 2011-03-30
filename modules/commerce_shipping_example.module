@@ -79,7 +79,7 @@ function commerce_shipping_example_calculate_shipping($settings, $order, $curren
  * Shipping method callback: checkout form.
  */
 
-function commerce_shipping_example_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+function commerce_shipping_example_submit_form($shipping_method, $pane_values, $checkout_pane, $order) {
   $form = array();
 
   // Merge in values from the order.

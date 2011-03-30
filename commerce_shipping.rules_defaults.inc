@@ -12,7 +12,7 @@
 function commerce_shipping_default_rules_configuration() {
   $rules = array();
 
-  // Add a default rule for each available payment method.
+  // Add a default rule for each available shipping method.
   foreach (commerce_shipping_methods() as $method_id => $shipping_method) {
     $rule = rules_reaction_rule();
 

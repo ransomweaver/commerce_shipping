@@ -20,10 +20,10 @@ function commerce_shipping_permission() {
 }
 
 /**
- * Returns an array of payment methods defined by enabled modules.
+ * Returns an array of shipping methods defined by enabled modules.
  *
  * @return
- *   An associative array of payment method objects keyed by the method_id.
+ *   An associative array of shipping method objects keyed by the method_id.
  */
 function commerce_shipping_methods() {
   $shipping_methods = &drupal_static(__FUNCTION__);
@@ -44,7 +44,7 @@ function commerce_shipping_methods() {
       $shipping_method += $defaults;
 
       // Default the display title to the title if necessary.  The display title
-      // is used in instances where the payment method has an official name used
+      // is used in instances where the shipping method has an official name used
       // as the title (i.e. UPS) but a different method of display on
       // selection forms (like some text and a set of images).
       if (empty($shipping_method['display_title'])) {
@@ -74,10 +74,10 @@ function commerce_shipping_methods() {
 }
 
 /**
- * Returns the specified callback for the given payment method if it exists.
+ * Returns the specified callback for the given shipping method if it exists.
  *
  * @param $shipping_method
- *   The payment method object.
+ *   The shipping method object.
  * @param $callback
  *   The callback function to return, one of:
  *   - settings_form
@@ -270,14 +270,20 @@ function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$fo
   $line_item_wrapper->shipping_method = $element['actions']['shipping_method']['#value'];
   $line_item_wrapper->commerce_unit_price->amount = $element['actions']['amount']['#value'];
   $line_item_wrapper->commerce_unit_price->currency_code = $element['actions']['currency_code']['#value'];
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+    $line_item_wrapper->commerce_unit_price->value(),
+    'base_price',
+    $line_item_wrapper->commerce_unit_price->value(),
+    TRUE
+  );
 }
 
 /**
- * Returns a payment method instance ID given a shipping method ID and the Rule
+ * Returns a shipping method instance ID given a shipping method ID and the Rule
  *   containing an enabling action with settings.
  *
  * @param $method_id
- *   The ID of the payment method.
+ *   The ID of the shipping method.
  * @param $rule
  *   The Rules configuration object used to provide settings for the method.
  *
@@ -290,15 +296,15 @@ function commerce_shipping_method_instance_id($method_id, $rule) {
 }
 
 /**
- * Returns a payment method instance object which includes the settings specific
+ * Returns a shipping method instance object which includes the settings specific
  *   to the context of the instance.
  *
  * @param $instance_id
- *   A payment method instance ID in the form of a pipe delimited string
+ *   A shipping method instance ID in the form of a pipe delimited string
  *     containing the method_id and the enabling Rule's name.
  *
  * @return
- *   The payment method instance object which is identical to the payment method
+ *   The shipping method instance object which is identical to the shipping method
  *     object with the addition of the settings array.
  */
 function commerce_shipping_method_instance_load($instance_id) {
@@ -315,26 +321,26 @@ function commerce_shipping_method_instance_load($instance_id) {
     return FALSE;
   }
 
-  // First load the payment method and add the instance ID.
-  $payment_method = commerce_shipping_method_load($method_id);
-  $payment_method['instance_id'] = $instance_id;
+  // First load the shipping method and add the instance ID.
+  $shipping_method = commerce_shipping_method_load($method_id);
+  $shipping_method['instance_id'] = $instance_id;
 
   // Then load the Rule configuration that enables the method.
   $rule = rules_config_load($rule_name);
 
   // Iterate over its actions to find one with the matching element ID and pull
-  // its settings into the payment method object.
-  $payment_method['settings'] = array();
+  // its settings into the shipping method object.
+  $shipping_method['settings'] = array();
 
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
       if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['settings'])) {
-        $payment_method['settings'] = $action->settings['shipping_method']['settings'];
+        $shipping_method['settings'] = $action->settings['shipping_method']['settings'];
       }
     }
   }
 
-  return $payment_method;
+  return $shipping_method;
 }
 
 /**

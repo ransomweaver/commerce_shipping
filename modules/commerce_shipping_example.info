@@ -7,4 +7,4 @@ dependencies[] = commerce_shipping
 core = 7.x
 
 ; Base module files
-files[] = commerce_payment_example.module
+files[] = commerce_shipping_example.module

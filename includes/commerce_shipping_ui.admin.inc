@@ -7,8 +7,8 @@
  */
 
 /**
- * Builds the payment settings page using the Rules UI overview table filtered
- *   to display payment method rules.
+ * Builds the shipping settings page using the Rules UI overview table filtered
+ *   to display shipping method rules.
  */
 function commerce_shipping_ui_admin_page() {
   RulesPluginUI::$basePath = 'admin/commerce/config/shipping-methods';
