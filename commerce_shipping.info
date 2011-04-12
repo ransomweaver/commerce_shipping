@@ -3,8 +3,10 @@ name = Shipping
 description = Implement core shipping features for Drupal commerce.
 package = Commerce
 dependencies[] = commerce
-dependencies[] = rules
 dependencies[] = commerce_line_item
+dependencies[] = list
+dependencies[] = rules
+
 core = 7.x
 
 ; Base module files
