@@ -383,7 +383,7 @@ function commerce_shipping_line_item_new($shipping_method) {
   $line_item->quantity = 1;
 
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $line_item->shipping_method = $shipping_method['method_id'];
+  $line_item_wrapper->shipping_method = $shipping_method['method_id'];
 
   return $line_item;
 }
