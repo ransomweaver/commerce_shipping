@@ -54,20 +54,24 @@ function commerce_shipping_example_settings_form($stored_values) {
  *    The suggested currency code to use for the shipping method price calculation.
  *
  * @return array of values, one for each line item created containing one of.
- *  - (array) containing any of these keys: 'amount', 'currency_code', 'quantity', 'label
- *  - (int) the price of the currency, the order currency will be used.
+ *  - (array) containing any of these keys: 'amount', 'currency_code', 'quantity', 'label'
+ *  - (int) the price of the shipping, the order currency will be used, formatted as integer.
+ *
+ * @see commerce_currency_amount_to_integer
  */
 function commerce_shipping_example_calculate_shipping($settings, $order, $currency_code) {
   // For this simple method, the price is always 42.
   $shipping_line_items = array();
+  $amount = isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42;
   $shipping_line_items[] = array(
-    'amount' => isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42,
+    'amount' => commerce_currency_amount_to_integer($amount, $currency_code),
     'currency_code' => $currency_code,
     'label' => t('Normal shipping'),
   );
   if (isset($settings['checkout_settings']['express']) && $settings['checkout_settings']['express']) {
+    $amount = isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42;
     $shipping_line_items[] = array(
-      'amount' => isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42,
+      'amount' => commerce_currency_amount_to_integer($amount, $currency_code),
       'currency_code' => $currency_code,
       'label' => t('Express fee'),
     );
