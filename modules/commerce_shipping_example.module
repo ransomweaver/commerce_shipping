@@ -64,14 +64,14 @@ function commerce_shipping_example_calculate_shipping($settings, $order, $curren
   $shipping_line_items = array();
   $amount = isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42;
   $shipping_line_items[] = array(
-    'amount' => commerce_currency_amount_to_integer($amount, $currency_code),
+    'amount' => commerce_currency_decimal_to_amount($amount, $currency_code),
     'currency_code' => $currency_code,
     'label' => t('Normal shipping'),
   );
   if (isset($settings['checkout_settings']['express']) && $settings['checkout_settings']['express']) {
     $amount = isset($settings['rules_settings']['shipping_price']) ? $settings['rules_settings']['shipping_price'] : 42;
     $shipping_line_items[] = array(
-      'amount' => commerce_currency_amount_to_integer($amount, $currency_code),
+      'amount' => commerce_currency_decimal_to_amount($amount, $currency_code),
       'currency_code' => $currency_code,
       'label' => t('Express fee'),
     );
