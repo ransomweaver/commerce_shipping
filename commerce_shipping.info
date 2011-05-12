@@ -4,6 +4,7 @@ description = Implement core shipping features for Drupal commerce.
 package = Commerce
 dependencies[] = commerce
 dependencies[] = commerce_line_item
+dependencies[] = commerce_payment
 dependencies[] = list
 dependencies[] = rules
 
