@@ -153,8 +153,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
       //$order_wrapper->commerce_line_items->offsetUnset($key);
     }
     else {
-      unset($line_item->order_id);
-      commerce_line_item_save($line_item);
+      $line_item_wrapper->delete();
     }
   }
   $order_wrapper->commerce_line_items = $line_items;
