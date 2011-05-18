@@ -152,6 +152,10 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
       $line_items[] = $line_item_wrapper->value();
       //$order_wrapper->commerce_line_items->offsetUnset($key);
     }
+    else {
+      unset($line_item->order_id);
+      commerce_line_item_save($line_item);
+    }
   }
   $order_wrapper->commerce_line_items = $line_items;
 
@@ -179,6 +183,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
       if (is_array($shipping_line_items)) {
         foreach ($shipping_line_items as $shipping_line_item) {
           $line_item = commerce_shipping_line_item_new($shipping_method);
+          $line_item->order_id = $order->order_id;
           $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
           if (is_numeric($shipping_line_item)) {
             $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
