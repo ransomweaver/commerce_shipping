@@ -62,7 +62,7 @@ function commerce_shipping_methods() {
       }
 
       // Merge in default callbacks.
-      foreach (array('settings_form', 'calculate_shipping', 'submit_form', 'submit_form_validate', 'submit_form_submit') as $callback) {
+      foreach (array('settings_form', 'calculate_shipping', 'submit_form', 'submit_form_validate', 'submit_form_submit', 'form_label') as $callback) {
         if (!isset($shipping_method['callbacks'][$callback])) {
           $shipping_method['callbacks'][$callback] = $shipping_method['base'] . '_' . $callback;
         }
@@ -334,9 +334,10 @@ function commerce_shipping_method_instance_load($instance_id) {
 
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
-      $shipping_method['shipping_label'] =
-        isset($action->settings['shipping_method']['shipping_label']) ?
-        $action->settings['shipping_method']['shipping_label'] : '';
+      $shipping_method['shipping_label'] = (
+        isset($action->settings['shipping_method']) &&
+        isset($action->settings['shipping_method']['shipping_label'])
+      ) ? $action->settings['shipping_method']['shipping_label'] : '';
       if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['settings'])) {
         $shipping_method['settings'] = $action->settings['shipping_method']['settings'];
       }

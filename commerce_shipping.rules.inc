@@ -115,7 +115,7 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
         '#type' => 'textfield',
         '#title' => t('Shipping label'),
         '#description' => t('Customise the shipping label as it would appear for customers'),
-        '#default_value' => isset($settings[$name]['shipping_label']) ? $settings[$name]['shipping_label'] : '',
+        '#default_value' => is_array($settings[$name]) && isset($settings[$name]['shipping_label']) ? $settings[$name]['shipping_label'] : '',
       );
       // If the shipping method has a settings callback...
       if ($callback = commerce_shipping_method_callback($shipping_method, 'settings_form')) {
