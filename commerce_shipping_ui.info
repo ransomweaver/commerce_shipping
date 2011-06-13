@@ -7,6 +7,7 @@ dependencies[] = commerce_order
 dependencies[] = commerce_order_ui
 dependencies[] = commerce_shipping
 core = 7.x
+configure = admin/commerce/config/shipping-methods
 
 ; Base module files
 files[] = commerce_shipping_ui.module
