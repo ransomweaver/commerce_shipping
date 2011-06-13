@@ -22,7 +22,7 @@ function commerce_shipping_default_rules_configuration() {
     $rule
       ->event('commerce_shipping_methods')
       ->action('commerce_shipping_enable_' . $method_id, array(
-        'commerce_order:select' => 'order',
+        'commerce_order:select' => 'commerce_order',
         'shipping_method' => $method_id,
       ));
 

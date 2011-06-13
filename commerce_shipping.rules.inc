@@ -17,7 +17,7 @@ function commerce_shipping_rules_event_info() {
     'commerce_shipping_methods' => array(
       'label' => t('Select available shipping methods for an order'),
       'group' => t('Commerce - shipping'),
-      'variables' => commerce_order_rules_event_variables(t('Order', array(), array('context' => 'a drupal commerce order'))),
+      'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
       'access callback' => 'commerce_order_rules_access',
     ),
   );
