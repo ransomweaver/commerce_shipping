@@ -163,6 +163,7 @@ function commerce_shipping_configure_line_item() {
       'label' => t('Shipping method'),
       'required' => TRUE,
       'settings' => array(),
+      'weight' => 0,
 
       'display' => array(
         'display' => array(
