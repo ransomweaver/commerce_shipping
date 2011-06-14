@@ -16,7 +16,7 @@ function commerce_shipping_example_commerce_shipping_method_info() {
   $shipping_methods['commerce_shipping_example'] = array(
     'title' => t('Shipping example method'),
     'description' => t('A simple example shipping method, that uses a flat shipping rate system.'),
-    'calculate_shipping' => 'commerce_shipping_example_commerce_calculate_shipping', // This is the default value.
+    'calculate_shipping' => 'commerce_shipping_example_calculate_shipping', // This is the default value.
   );
 
   return $shipping_methods;
@@ -136,4 +136,13 @@ function commerce_shipping_example_submit_form_validate($shipping_method, $pane_
 function commerce_shipping_example_submit_form_submit($shipping_method, $pane_form, $pane_values, $order) {
   // This method is not needed, but allows shipping methods to react to the
   // form submission if needed and could alter the order if needed.
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function commerce_shipping_example_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'commerce_shipping') {
+    return "plugins/$plugin_type";
+  }
 }
