@@ -60,7 +60,6 @@ class CommerceShippingExample extends CommerceShippingQuote {
   }
 
   public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {
-    dd($form_values);
     if (empty($order)) {
       $order = $this->order;
     }
