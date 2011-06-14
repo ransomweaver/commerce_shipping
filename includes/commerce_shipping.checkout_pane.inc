@@ -40,6 +40,17 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
           $method_instance['shipping_label'] : $shipping_method['display_title'];
       }
     }
+    elseif ($plugin = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_info['method_id']))) {
+      $class = new $plugin['handler']['class'](array(), $order);
+      if ($class->form_label()) {
+        $options[$instance_id] = $class->form_label();
+      }
+      else {
+        $method_instance = commerce_shipping_method_instance_load($instance_id);
+        $options[$instance_id] = !empty($method_instance['shipping_label']) ?
+          $method_instance['shipping_label'] : $shipping_method['display_title'];
+      }
+    }
   }
 
   // If no shipping methods were found, return the empty form.
@@ -82,17 +93,25 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
     // Set the default value for the shipping method radios.
     $pane_form['shipping_method']['#default_value'] = $default_value;
+    $pane_form['shipping_details'] = array();
 
     // Add the shipping method specific form elements.
     $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
     $shipping_method = commerce_shipping_method_load($method_info['method_id']);
-    $shipping_shipping->settings = $method_info['settings'];
-
-    if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form')) {
-      $pane_form['shipping_details'] = $callback($shipping_method, $pane_values, $checkout_pane, $order);
+    if ($shipping_method) {
+      if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form')) {
+        $pane_form['shipping_details'] = $callback($shipping_method, $pane_values, $checkout_pane, $order);
+      }
     }
     else {
-      $pane_form['shipping_details'] = array();
+      $plugin = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_info['method_id']));
+      $settings = isset($method_instance['settings']) ? $method_instance['settings'] : array();
+      $class = new $plugin['handler']['class']($settings, $order);
+      $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
+      $pane_form['commerce_shipping_plugin'] = array(
+        '#type' => 'value',
+        '#value' => $class
+      );
     }
 
     $pane_form['shipping_details']['#prefix'] = '<div id="shipping-details">';
@@ -114,13 +133,20 @@ function commerce_shipping_pane_checkout_form_details_refresh($form, $form_state
 function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  if (isset($pane_form['commerce_shipping_plugin'])) {
+    $class = $pane_form['commerce_shipping_plugin']['#value'];
+  }
 
   // Only attempt validation if there were shipping methods available.
   if ($pane_values['shipping_methods']) {
     // If the selected shipping method was changed...
     if ($pane_values['shipping_method'] != $pane_form['shipping_method']['#default_value']) {
       // And the newly selected method has a valid form callback...
-      if ($shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method'])) {
+      if (isset($class)) {
+        // Always rebuild for plugins.
+        return FALSE;
+      }
+      elseif ($shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method'])) {
         if (commerce_shipping_method_callback($shipping_method, 'submit_form')) {
           // Fail validation so the form is rebuilt to include the shipping method
           // specific form elements.
@@ -129,16 +155,22 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
       }
     }
 
-    // Delegate validation to the shipping method callback.
-    $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
-
-    if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form_validate')) {
-      $result = $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order, array($checkout_pane['pane_id'], 'shipping_details'));
-
-      // To prevent shipping method validation routines from having to return TRUE
-      // explicitly, only return FALSE if it was specifically returned.  Otherwise
-      // default to TRUE.
+    if (isset($class)) {
+      $result = $class->submit_form_validate($pane_form['shipping_details'], $pane_values['shipping_details'], array($checkout_pane['pane_id'], 'shipping_details'), $order);
       return $result === FALSE ? FALSE : TRUE;
+    }
+    else {
+      // Delegate validation to the shipping method callback.
+      $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
+
+      if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form_validate')) {
+        $result = $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order, array($checkout_pane['pane_id'], 'shipping_details'));
+
+        // To prevent shipping method validation routines from having to return TRUE
+        // explicitly, only return FALSE if it was specifically returned.  Otherwise
+        // default to TRUE.
+        return $result === FALSE ? FALSE : TRUE;
+      }
     }
   }
   // Nothing to validate.
@@ -161,53 +193,67 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  if (isset($pane_form['commerce_shipping_plugin'])) {
+    $class = $pane_form['commerce_shipping_plugin']['#value'];
+    $rule_ids = explode('|', $pane_values['shipping_method']);
+    $method_id = $rule_ids[0];
+  }
 
   // Only process if there were shipping methods available.
   if ($pane_values['shipping_methods']) {
     $order->data['shipping_method'] = $pane_values['shipping_method'];
 
+    $default_currency_code = commerce_default_currency();
+    if ($balance = commerce_payment_order_balance($order)) {
+      $default_currency_code = $balance['currency_code'];
+    }
+    $form_values = $form_state['values']['commerce_shipping']['shipping_details'];
+
     // Let the shipping method calculate the shipping price.
-    $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
-    if ($callback = commerce_shipping_method_callback($shipping_method, 'calculate_shipping')) {
-      // Setup variables for the calcualte_shipping function.
-      $settings = array(
-        'checkout_settings' => $form_state['values']['commerce_shipping']['shipping_details'],
-        'rules_settings' => $shipping_method['settings'],
-      );
-      $default_currency_code = commerce_default_currency();
-      if ($balance = commerce_payment_order_balance($order)) {
-        $default_currency_code = $balance['currency_code'];
+    if (isset($class)) {
+      $shipping_method = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
+      $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
+    }
+    else {
+      $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
+      if ($callback = commerce_shipping_method_callback($shipping_method, 'calculate_shipping')) {
+        // Setup variables for the calcualte_shipping function.
+        $settings = array(
+          'checkout_settings' => $form_values,
+          'rules_settings' => $shipping_method['settings'],
+        );
+        $shipping_line_items = $callback($settings, $order, $default_currency_code);
       }
-      $shipping_line_items = $callback($settings, $order, $default_currency_code);
-      // Loop through the result and create line items if possible.
-      if (is_array($shipping_line_items)) {
-        foreach ($shipping_line_items as $shipping_line_item) {
-          $line_item = commerce_shipping_line_item_new($shipping_method);
-          $line_item->order_id = $order->order_id;
-          $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-          if (is_numeric($shipping_line_item)) {
-            $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
-            $line_item_wrapper->commerce_unit_price->currency_code = $default_currency_code;
-          }
-          elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
-            $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
-            $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currence_code']) ? $shipping_line_item['currence_code'] : $default_currency_code;
-            if (isset($shipping_line_item['label'])) {
-              $line_item_wrapper->line_item_label = $shipping_line_item['label'];
-            }
-            if (isset($shipping_line_item['quantity'])) {
-              $line_item_wrapper->quantity = $shipping_line_item['quantity'];
-            }
-          }
-          $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-            $line_item_wrapper->commerce_unit_price->value(),
-            'base_price',
-            $line_item_wrapper->commerce_unit_price->value(),
-            TRUE
-          );
-          $line_item_wrapper->save();
-          $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
+    }
+
+    // Loop through the result and create line items if possible.
+    if (isset($shipping_line_items) && is_array($shipping_line_items)) {
+      foreach ($shipping_line_items as $shipping_line_item) {
+        $line_item = commerce_shipping_line_item_new($shipping_method);
+        $line_item->order_id = $order->order_id;
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+        if (is_numeric($shipping_line_item)) {
+          $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
+          $line_item_wrapper->commerce_unit_price->currency_code = $default_currency_code;
         }
+        elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
+          $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
+          $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currence_code']) ? $shipping_line_item['currence_code'] : $default_currency_code;
+          if (isset($shipping_line_item['label'])) {
+            $line_item_wrapper->line_item_label = $shipping_line_item['label'];
+          }
+          if (isset($shipping_line_item['quantity'])) {
+            $line_item_wrapper->quantity = $shipping_line_item['quantity'];
+          }
+        }
+        $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+          $line_item_wrapper->commerce_unit_price->value(),
+          'base_price',
+          $line_item_wrapper->commerce_unit_price->value(),
+          TRUE
+        );
+        $line_item_wrapper->save();
+        $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
       }
     }
 

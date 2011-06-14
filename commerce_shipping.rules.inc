@@ -32,6 +32,7 @@ function commerce_shipping_rules_action_info() {
   $actions = array();
 
   // Add an action for each available shipping method.
+  // TODO: This should be depricated.
   foreach (commerce_shipping_methods() as $shipping_method) {
     $actions['commerce_shipping_enable_' . $shipping_method['method_id']] = array(
       'label' => t('Enable shipping method: @method', array('@method' => $shipping_method['title'])),
@@ -46,6 +47,27 @@ function commerce_shipping_rules_action_info() {
       ),
       'group' => t('Commerce - shipping'),
       'base' => $shipping_method['base'],
+      'callbacks' => array(
+        'execute' => 'commerce_shipping_enable_method',
+      ),
+    );
+  }
+
+  // Add an action for each plugin that want's it.
+  foreach (shipping_plugin_get_plugins('quotes') as $key => $plugin) {
+    $actions['commerce_shipping_enable_plugin-' . $key] = array(
+      'label' => t('Enable shipping method: @method', array('@method' => $plugin['title'])),
+      'parameter' => array(
+        'commerce_order' => array('type' => 'commerce_order', 'label' => t('Order')),
+        'shipping_method' => array(
+          'type' => 'commerce_shipping_settings',
+          'restriction' => 'input',
+          'label' => t('Shipping settings'),
+          'shipping_method' => 'plugin-' . $key,
+        ),
+      ),
+      'group' => t('Commerce - shipping'),
+      'base' => $plugin['plugin module'] . '_' . $key,
       'callbacks' => array(
         'execute' => 'commerce_shipping_enable_method',
       ),
@@ -124,6 +146,27 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
 
         // Add the settings form elements to the action form.
         $form[$name]['settings'] = $callback($method_settings);
+      }
+    }
+    // If plugin type methods is used.
+    elseif (strpos($info['shipping_method'], 'plugin-') !== FALSE) {
+      $plugin = str_replace('plugin-', '', $info['shipping_method']);
+      $class = shipping_plugin_get_plugin_class_init('quotes', $plugin);
+      if ($class === FALSE) {
+        $form[$name]['invalid']['#markup'] = t('Error getting shipping method.');
+      }
+      else {
+        $form[$name]['method_id'] = array('#type' => 'value', '#value' => $info['shipping_method']);
+        $form[$name]['shipping_label'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Shipping label'),
+          '#description' => t('Customise the shipping label as it would appear for customers'),
+          '#default_value' => is_array($settings[$name]) && isset($settings[$name]['shipping_label']) ? $settings[$name]['shipping_label'] : '',
+        );
+        $form[$name]['settings'] = array();
+        // Prepare an array of shipping method settings defaults.
+        $rules_settings = !empty($settings[$name]) && isset($settings[$name]['settings']) ? $settings[$name]['settings'] : array();
+        $class->settings_form($form[$name]['settings'], $rules_settings);
       }
     }
     else {

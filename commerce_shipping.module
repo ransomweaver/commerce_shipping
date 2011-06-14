@@ -400,3 +400,88 @@ function commerce_shipping_views_api() {
     'path' => drupal_get_path('module', 'commerce_shipping') . '/includes/views',
   );
 }
+
+/**
+ * Implementation of hook_ctools_plugin_type().
+ */
+function commerce_shipping_ctools_plugin_type() {
+  return array(
+    // Quotes are used for calculating shipping costs.
+    'quotes' => array(
+      'child plugins' => FALSE,
+      'classes' => array('handler'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function commerce_shipping_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'commerce_shipping') {
+    return "plugins/$plugin_type";
+  }
+}
+
+/**
+ * Deletes a line item from an order.
+ *
+ * @param $order
+ *   The order to delete from.
+ * @param $line_item_id
+ *   The ID of the product line item to delete from the order.
+ * @param $skip_save
+ *   TRUE to skip saving the order after deleting the line item; used when the
+ *     order would otherwise be saved or to delete multiple product line items
+ *     from the order and then save.
+ *
+ * @return
+ *   The order with the matching line item deleted from the line item
+ *     reference field.
+ */
+function commerce_shipping_line_item_delete($order, $line_item_id, $skip_save = FALSE) {
+  // Remove the line item from the line item reference field.
+  $order = commerce_entity_reference_delete('commerce_order', $order, 'commerce_line_items', $line_item_id);
+
+  // Delete the actual line item.
+  commerce_line_item_delete($line_item_id);
+  if ($skip_save == FALSE) {
+    commerce_order_save($order);
+  }
+
+  return $order;
+}
+
+/**
+ * Get commerce_shipping plugins of a specific type
+ *
+ * @param $plugin_type
+ *    The type of plugin to get.
+ *
+ * @return array of ctools plugin definitions.
+ */
+function shipping_plugin_get_plugins($plugin_type = 'quotes') {
+  ctools_include('plugins');
+  return ctools_get_plugins('commerce_shipping', $plugin_type);
+}
+
+function shipping_plugin_get_plugin($plugin_type, $id) {
+  ctools_include('plugins');
+  return  ctools_get_plugins('commerce_shipping', $plugin_type, $id);
+}
+
+function shipping_plugin_get_plugin_class($plugin_type, $id) {
+  $plugin =  shipping_plugin_get_plugin($plugin_type, $id);
+  if (is_array($plugin) && isset($plugin['handler']['class'])) {
+    return $plugin['handler']['class'];
+  }
+  return FALSE;
+}
+
+function shipping_plugin_get_plugin_class_init($plugin_type, $id) {
+  $class = shipping_plugin_get_plugin_class($plugin_type, $id);
+  if ($class) {
+    return new $class();
+  }
+  return FALSE;
+}
