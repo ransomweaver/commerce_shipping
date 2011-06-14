@@ -151,17 +151,13 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
 function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
   // In case this order already have shipping line items, we need to remove them.
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $line_items = array();
-  foreach ($order_wrapper->commerce_line_items as $key => $line_item_wrapper) {
-    if ($line_item_wrapper->type->value() != 'shipping') {
-      $line_items[] = $line_item_wrapper->value();
-      //$order_wrapper->commerce_line_items->offsetUnset($key);
-    }
-    else {
-      $line_item_wrapper->delete();
+  $delete_line_items = array();
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() == 'shipping') {
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
     }
   }
-  $order_wrapper->commerce_line_items = $line_items;
+  $order_wrapper->save();
 
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
