@@ -41,7 +41,7 @@ function commerce_shipping_default_rules_configuration() {
 
       $rule
         ->event('commerce_shipping_methods')
-        ->action('commerce_shipping_enable_plugin_' . $key, array(
+        ->action('commerce_shipping_enable_plugin-' . $key, array(
           'commerce_order:select' => 'site:current-cart-order',
           'shipping_method' => 'plugin-' . $key,
         ));

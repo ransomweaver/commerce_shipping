@@ -47,8 +47,9 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       }
       else {
         $method_instance = commerce_shipping_method_instance_load($instance_id);
+        $plugin_title = isset($plugin['display_title']) ? $plugin['display_title'] : $plugin['title'];
         $options[$instance_id] = !empty($method_instance['shipping_label']) ?
-          $method_instance['shipping_label'] : $shipping_method['display_title'];
+          $method_instance['shipping_label'] : $plugin_title;
       }
     }
   }
