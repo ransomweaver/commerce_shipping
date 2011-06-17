@@ -247,12 +247,19 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
             $line_item_wrapper->quantity = $shipping_line_item['quantity'];
           }
         }
-        $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-          $line_item_wrapper->commerce_unit_price->value(),
-          'base_price',
-          $line_item_wrapper->commerce_unit_price->value(),
-          TRUE
+
+        // TODO: Remember to bug Ryan about this until resolved.
+        // Manually add the price component. We should use commerce_price_component_add()
+        // But it also adds a base_price component which will mess up totals.
+        // (See http://drupal.org/node/1192200)
+        $price = $line_item_wrapper->commerce_unit_price->value();
+        $price['data']['components'][] = array(
+          'name' => 'quote',
+          'price' => $price,
+          'included' => TRUE,
         );
+        $line_item_wrapper->commerce_unit_price = $price;
+
         $line_item_wrapper->save();
         $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
       }
@@ -267,45 +274,4 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
       $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order);
     }
   }
-}
-
-/**
- * Checkout pane callback: returns the cart contents pane's settings form.
- */
-function commerce_shipping_pane_settings_form($checkout_pane) {
-  $form = array();
-
-  // Build an options array of Views available for the cart contents pane.
-  $options = array();
-
-   // Generate an option list from all user defined and module defined views.
-   foreach (views_get_all_views() as $view_id => $view_value) {
-    // Only include line item Views.
-    if ($view_value->base_table == 'commerce_order') {
-       foreach ($view_value->display as $display_id => $display_value) {
-        $options[check_plain($view_id)][$view_id .'|'. $display_id] = check_plain($display_value->display_title);
-      }
-     }
-   }
-
-  $form['commerce_shipping_pane_review_view'] = array(
-    '#type' => 'select',
-    '#title' => t('Shipping review View'),
-    '#description' => t('Specify the View to use in the shipping summery view.'),
-    '#options' => $options,
-    '#default_value' => variable_get('commerce_shipping_pane_review_view', 'commerce_shipping_summary|default'),
-  );
-
-  return $form;
-}
-
-/**
- * Checkout pane callback: returns the cart contents review data for the
- *   Review checkout pane.
- */
-function commerce_shipping_pane_review($form, $form_state, $checkout_pane, $order) {
-  // Extract the View and display keys from the cart contents pane setting.
-  list($view_id, $display_id) = explode('|', variable_get('commerce_shipping_pane_review_view', 'commerce_shipping_summary|default'));
-
-  return commerce_embed_view($view_id, $display_id, array($order->order_id));
 }

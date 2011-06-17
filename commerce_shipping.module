@@ -453,6 +453,19 @@ function commerce_shipping_line_item_delete($order, $line_item_id, $skip_save = 
 }
 
 /**
+ * Implements hook_commerce_price_component_type_info().
+ */
+function commerce_shipping_commerce_price_component_type_info() {
+  return array(
+    'quote' => array(
+      'title' => t('Shipping costs'),
+      'display_title' => t('Shipping costs'),
+      'weight' => -50,
+    ),
+  );
+}
+
+/**
  * Get commerce_shipping plugins of a specific type
  *
  * @param $plugin_type
