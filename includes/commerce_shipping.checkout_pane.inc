@@ -134,6 +134,9 @@ function commerce_shipping_pane_checkout_form_details_refresh($form, $form_state
 function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  if (!isset($pane_values['shipping_details'])) {
+    $pane_values['shipping_details'] = array();
+  }
   if (isset($pane_form['commerce_shipping_plugin'])) {
     $class = $pane_form['commerce_shipping_plugin']['#value'];
   }
@@ -208,7 +211,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     if ($balance = commerce_payment_order_balance($order)) {
       $default_currency_code = $balance['currency_code'];
     }
-    $form_values = $form_state['values']['commerce_shipping']['shipping_details'];
+    $form_values = isset($form_state['values']['commerce_shipping']['shipping_details']) ? $form_state['values']['commerce_shipping']['shipping_details'] : array();
 
     // Let the shipping method calculate the shipping price.
     if (isset($class)) {

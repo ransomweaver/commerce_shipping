@@ -475,12 +475,28 @@ function commerce_shipping_commerce_price_component_type_info() {
  */
 function shipping_plugin_get_plugins($plugin_type = 'quotes') {
   ctools_include('plugins');
-  return ctools_get_plugins('commerce_shipping', $plugin_type);
+  $plugins = ctools_get_plugins('commerce_shipping', $plugin_type);
+  foreach ($plugins as $id => &$plugin) {
+    if (!isset($plugin['method_id'])) {
+      $plugin['method_id'] = $id;
+    }
+    if (!isset($plugin['display_title'])) {
+      $plugin['display_title'] = $plugin['title'];
+    }
+  }
+  return $plugins;
 }
 
 function shipping_plugin_get_plugin($plugin_type, $id) {
   ctools_include('plugins');
-  return  ctools_get_plugins('commerce_shipping', $plugin_type, $id);
+  $plugin = ctools_get_plugins('commerce_shipping', $plugin_type, $id);
+  if (!isset($plugin['method_id'])) {
+    $plugin['method_id'] = $id;
+  }
+  if (!isset($plugin['display_title'])) {
+    $plugin['display_title'] = $plugin['title'];
+  }
+  return $plugin;
 }
 
 function shipping_plugin_get_plugin_class($plugin_type, $id) {
