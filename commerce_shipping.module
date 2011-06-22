@@ -460,7 +460,7 @@ function commerce_shipping_commerce_price_component_type_info() {
     'quote' => array(
       'title' => t('Shipping costs'),
       'display_title' => t('Shipping costs'),
-      'weight' => -50,
+      'weight' => -40,
     ),
   );
 }
