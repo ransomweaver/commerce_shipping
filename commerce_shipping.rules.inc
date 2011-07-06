@@ -55,23 +55,25 @@ function commerce_shipping_rules_action_info() {
 
   // Add an action for each plugin that want's it.
   foreach (shipping_plugin_get_plugins('quotes') as $key => $plugin) {
-    $actions['commerce_shipping_enable_plugin-' . $key] = array(
-      'label' => t('Enable shipping method: @method', array('@method' => $plugin['title'])),
-      'parameter' => array(
-        'commerce_order' => array('type' => 'commerce_order', 'label' => t('Order')),
-        'shipping_method' => array(
-          'type' => 'commerce_shipping_settings',
-          'restriction' => 'input',
-          'label' => t('Shipping settings'),
-          'shipping_method' => 'plugin-' . $key,
+    if (!isset($plugin['create_rule']) || $plugin['create_rule'] !== FALSE) {
+      $actions['commerce_shipping_enable_plugin-' . $key] = array(
+        'label' => t('Enable shipping method: @method', array('@method' => $plugin['title'])),
+        'parameter' => array(
+          'commerce_order' => array('type' => 'commerce_order', 'label' => t('Order')),
+          'shipping_method' => array(
+            'type' => 'commerce_shipping_settings',
+            'restriction' => 'input',
+            'label' => t('Shipping settings'),
+            'shipping_method' => 'plugin-' . $key,
+          ),
         ),
-      ),
-      'group' => t('Commerce - shipping'),
-      'base' => $plugin['plugin module'] . '_' . $key,
-      'callbacks' => array(
-        'execute' => 'commerce_shipping_enable_method',
-      ),
-    );
+        'group' => t('Commerce - shipping'),
+        'base' => $plugin['plugin module'] . '_' . $key,
+        'callbacks' => array(
+          'execute' => 'commerce_shipping_enable_method',
+        ),
+      );
+    }
   }
   return $actions;
 }
