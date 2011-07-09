@@ -45,7 +45,7 @@ function commerce_shipping_rules_action_info() {
           'shipping_method' => $shipping_method['method_id'],
         ),
       ),
-      'group' => t('Commerce - shipping'),
+      'group' => t('Commerce Shipping'),
       'base' => $shipping_method['base'],
       'callbacks' => array(
         'execute' => 'commerce_shipping_enable_method',
@@ -67,7 +67,7 @@ function commerce_shipping_rules_action_info() {
             'shipping_method' => 'plugin-' . $key,
           ),
         ),
-        'group' => t('Commerce - shipping'),
+        'group' => t('Commerce Shipping'),
         'base' => $plugin['plugin module'] . '_' . $key,
         'callbacks' => array(
           'execute' => 'commerce_shipping_enable_method',
@@ -75,7 +75,29 @@ function commerce_shipping_rules_action_info() {
       );
     }
   }
+
+  $actions['commerce_shipping_remove_all'] = array(
+    'label' => t('Remove all shipping items from an order'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order to remove shipping items from'),
+      ),
+    ),
+    'group' => t('Commerce Shipping'),
+    'callbacks' => array(
+      'execute' => 'commerce_shipping_rules_remove_all',
+    ),
+  );
+
   return $actions;
+}
+
+/**
+ * Rules action: Remove all shipping line items on an order.
+ */
+function commerce_shipping_rules_remove_all($order) {
+  commerce_shipping_clear_order($order);
 }
 
 /**

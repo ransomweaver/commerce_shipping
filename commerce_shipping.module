@@ -514,3 +514,28 @@ function shipping_plugin_get_plugin_class_init($plugin_type, $id) {
   }
   return FALSE;
 }
+
+/**
+ * Delete all shipping line items on an order.
+ *
+ * @param $order
+ *  The order object to delete the shipping line items from.
+ */
+function commerce_shipping_clear_order($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  // When deleting more than one line item, metadata_wrapper will give problems
+  // if deleting while looping through the line items. So first remove from order
+  // and then delete the line items.
+  $line_items_to_delete = array();
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() == 'shipping') {
+      $line_items_to_delete[] = $line_item_wrapper->line_item_id->value();
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+    }
+  }
+  $order_wrapper->save();
+  // Delete line items.
+  foreach ($line_items_to_delete as $line_item_id) {
+    commerce_line_item_delete($line_item_id);
+  }
+}
