@@ -274,7 +274,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     // This is not actually needed, but for flexibility allow shipping methods
     // to react on the form submission.
     if (isset($class)) {
-      $class->shipping_items_created($order);
+      $class->shipping_items_created($pane_form['shipping_details'], $pane_values['shipping_details'], $order);
     }
     elseif ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form_submit')) {
       $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order);

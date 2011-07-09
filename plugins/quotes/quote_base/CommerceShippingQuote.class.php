@@ -58,10 +58,14 @@ interface CommerceShippingQuoteInterface {
   /**
    * Called After shipping items is created.
    *
+   * @param $pane_values
+   *    $form_state['values'] from the pane where the form is located
+   * @param $checkout_pane
+   *    $checkout_pane passed by commerce.
    * @param $order
    *    Optionally pass the order, if the class wasn't instantiated with the order.
    */
-  public function shipping_items_created($order = NULL);
+  public function shipping_items_created($pane_values, $checkout_pane, $order = NULL);
 
   /**
    * Do the actual shipping cost calculation.
@@ -111,5 +115,5 @@ abstract class CommerceShippingQuote implements CommerceShippingQuoteInterface {
 
   public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {}
 
-  public function shipping_items_created($order = NULL) {}
+  public function shipping_items_created($pane_values, $checkout_pane, $order = NULL) {}
 }
