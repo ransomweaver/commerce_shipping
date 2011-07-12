@@ -1,7 +1,7 @@
 ; $Id$
 name = Shipping Method Example
 description = Provides an example shipping method for testing and development.
-package = Commerce
+package = Commerce (contrib)
 dependencies[] = commerce
 dependencies[] = commerce_shipping
 core = 7.x
