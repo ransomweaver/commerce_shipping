@@ -141,16 +141,15 @@ function commerce_shipping_configure_line_item() {
 
   if (empty($field)) {
     $field = array(
+      'field_name' => 'shipping_method',
+      'type' => 'list_text',
       'cardinality' => 1,
       'entity_types' => array('commerce_line_item'),
       'translatable' => FALSE,
       'locked' => TRUE,
-      'field_name' => 'shipping_method',
-      'type' => 'list_text',
       'settings' => array(
         'allowed_values_function' => 'commerce_shipping_get_shipping_methods_options',
       ),
-
     );
     $field = field_create_field($field);
   }
@@ -163,11 +162,16 @@ function commerce_shipping_configure_line_item() {
       'label' => t('Shipping method'),
       'required' => TRUE,
       'settings' => array(),
-      'weight' => 0,
+
+      'widget' => array(
+        'type' => 'options_select',
+        'weight' => 0,
+      ),
 
       'display' => array(
         'display' => array(
           'label' => 'hidden',
+          'weight' => 0,
         ),
       ),
     );
