@@ -237,7 +237,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
         }
         elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
           $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
-          $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currence_code']) ? $shipping_line_item['currence_code'] : $default_currency_code;
+          $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currency_code']) ? $shipping_line_item['currency_code'] : $default_currency_code;
           if (isset($shipping_line_item['label'])) {
             $line_item_wrapper->line_item_label = $shipping_line_item['label'];
           }
