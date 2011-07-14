@@ -8,7 +8,6 @@
  * Add address field for the commerce_shipping customer profile.
  */
 function commerce_shipping_update_7000(&$sandbox) {
-  commerce_shipping_enable();
   $profile_types = commerce_shipping_commerce_customer_profile_type_info();
   commerce_customer_configure_customer_profile_type($profile_types['shipping']);
   return t('Address field added to commerce shipping customer profile.');

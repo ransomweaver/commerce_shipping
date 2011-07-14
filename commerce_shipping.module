@@ -105,63 +105,6 @@ function commerce_shipping_commerce_customer_profile_type_info() {
 }
 
 /**
- * Implements hook_enable().
- */
-function commerce_shipping_enable() {
-  // Add a shipping address field to our customer profile.
-  // If a field type we know should exist isn't found, clear the Field cache.
-  if (!field_info_field_types('addressfield')) {
-    field_cache_clear();
-  }
-
-  // Look for or add an address field to the customer profile type.
-  $field_name = 'commerce_shipping_address';
-  $field = field_info_field($field_name);
-  $instance = field_info_instance('commerce_customer_profile', $field_name, 'shipping');
-
-  if (empty($field)) {
-    $field = array(
-      'field_name' => $field_name,
-      'type' => 'addressfield',
-      'cardinality' => 1,
-      'entity_types' => array('commerce_customer_profile'),
-      'translatable' => FALSE,
-    );
-
-    $field = field_create_field($field);
-  }
-
-  if (empty($instance)) {
-    $instance = array(
-      'field_name' => $field_name,
-      'entity_type' => 'commerce_customer_profile',
-      'bundle' => 'shipping',
-      'label' => t('Shipping address'),
-      'required' => FALSE,
-      'widget' => array(
-        'type' => 'addressfield_standard',
-        'weight' => -9,
-      ),
-      'settings' => array(),
-      'display' => array(),
-    );
-
-    // Set the default display formatters for various view modes.
-    foreach (array('default', 'customer', 'administrator') as $view_mode) {
-      $instance['display'][$view_mode] = array(
-        'label' => 'hidden',
-        'type' => 'addressfield_default',
-        'weight' => -9,
-      );
-    }
-
-    field_create_instance($instance);
-  }
-}
-
-
-
-/**
  * Returns an array of shipping methods defined by enabled modules.
  *
  * @return
