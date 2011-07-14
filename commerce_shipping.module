@@ -346,7 +346,8 @@ function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$fo
     $line_item_wrapper->commerce_unit_price->value(),
     'quote',
     $line_item_wrapper->commerce_unit_price->value(),
-    TRUE
+    TRUE,
+    FALSE
   );
 }
 

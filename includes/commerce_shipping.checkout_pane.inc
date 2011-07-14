@@ -246,17 +246,15 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
           }
         }
 
-        // TODO: Remember to bug Ryan about this until resolved.
-        // Manually add the price component. We should use commerce_price_component_add()
-        // But it also adds a base_price component which will mess up totals.
-        // (See http://drupal.org/node/1192200)
-        $price = $line_item_wrapper->commerce_unit_price->value();
-        $price['data']['components'][] = array(
-          'name' => 'quote',
-          'price' => $price,
-          'included' => TRUE,
+        // Add price component on the line item unit price.
+        $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+          $line_item_wrapper->commerce_unit_price->value(),
+          'quote',
+          $line_item_wrapper->commerce_unit_price->value(),
+          TRUE,
+          FALSE
         );
-        $line_item_wrapper->commerce_unit_price = $price;
+        $price = $line_item_wrapper->commerce_unit_price->value();
 
         $line_item_wrapper->save();
         $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
