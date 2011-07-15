@@ -12,3 +12,13 @@ function commerce_shipping_update_7000(&$sandbox) {
   commerce_customer_configure_customer_profile_type($profile_types['shipping']);
   return t('Address field added to commerce shipping customer profile.');
 }
+
+/**
+ * Add default profile reference field on order if needed
+ */
+function commerce_shipping_update_7001(&$sandbox) {
+  $profile_types = commerce_shipping_commerce_customer_profile_type_info();
+  $profile_type = $profile_types['shipping'];
+  commerce_order_configure_customer_profile_type($profile_type['type'], $profile_type['name']);
+  return t('Commerce customer profile field added to commerce order.');
+}
