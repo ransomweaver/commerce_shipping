@@ -1,6 +1,10 @@
 <?php
 
 class CommerceShippingExample extends CommerceShippingQuote {
+  /**
+   * The settings form, used to add our custom settings to the rules action
+   * settings form.
+   */
   public function settings_form(&$form, $rules_settings) {
     $form['shipping_price'] = array(
       '#type' => 'textfield',
@@ -11,7 +15,10 @@ class CommerceShippingExample extends CommerceShippingQuote {
     );
   }
 
-  // Form adding when selecting the quote.
+  /**
+   * Define a form that is added when this shipping method is selected during
+   * checkout.
+   */
   public function submit_form($pane_values, $checkout_pane, $order = NULL) {
     if (empty($order)) {
       $order = $this->order;
@@ -47,6 +54,11 @@ class CommerceShippingExample extends CommerceShippingQuote {
     return $form;
   }
 
+  /**
+   * Validation form, to validate the submit form that we can add. If we want
+   * to fail the validation we return FALSE, otherwise nothing needs to be
+   * done.
+   */
   public function submit_form_validate($pane_form, $pane_values, $form_parents = array(), $order = NULL) {
     // Throw an error if a long enough name was not provided.
     if (strlen($pane_values['name']) < 2) {
@@ -59,6 +71,18 @@ class CommerceShippingExample extends CommerceShippingQuote {
     }
   }
 
+  /**
+   * The bulk of the shipping method is usually found here. This is where we
+   * do the actual calculations to figure out what the shipping costs should
+   * be. We can return a single price or for more control an array of arrays
+   * containing:
+   *    - label
+   *    - quantity
+   *    - amount
+   *    - currency code
+   *
+   * Only the amount is needed as the rest have default values.
+   */
   public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {
     if (empty($order)) {
       $order = $this->order;
