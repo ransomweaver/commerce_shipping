@@ -84,7 +84,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
     // Add the shipping method specific form elements.
     $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
-    $plugin = shipping_plugin_get_plugin('quotes', $method_info['method_id']);
+    $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_info['method_id']);
     $settings = isset($method_instance['settings']) ? $method_instance['settings'] : array();
     $class = new $plugin['handler']['class']($settings, $order);
     $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
@@ -164,7 +164,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
     // Let the shipping method calculate the shipping price.
     if (isset($class)) {
-      $shipping_method = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
+      $shipping_method = commerce_shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
       $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
     }
     else {

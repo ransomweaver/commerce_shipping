@@ -13,7 +13,7 @@ function commerce_shipping_default_rules_configuration() {
   $rules = array();
 
   // Add a default rule fore each available plugin.
-  foreach (shipping_plugin_get_plugins('quotes') as $key => $plugin) {
+  foreach (commerce_shipping_plugin_get_plugins('quotes') as $key => $plugin) {
     // Don't create rule if plugin don't want it.
     if (!isset($plugin['create_rule']) || $plugin['create_rule'] !== FALSE) {
       $rule = rules_reaction_rule();

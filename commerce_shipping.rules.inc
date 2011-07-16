@@ -32,7 +32,7 @@ function commerce_shipping_rules_action_info() {
   $actions = array();
 
   // Add an action for each plugin that want's it.
-  foreach (shipping_plugin_get_plugins('quotes') as $key => $plugin) {
+  foreach (commerce_shipping_plugin_get_plugins('quotes') as $key => $plugin) {
     if (!isset($plugin['create_rule']) || $plugin['create_rule'] !== FALSE) {
       $actions['commerce_shipping_enable_' . $key] = array(
         'label' => t('Enable shipping method: @method', array('@method' => $plugin['title'])),
@@ -133,7 +133,7 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
 
   public static function inputForm($name, $info, $settings, RulesPlugin $element) {
     $plugin = str_replace('plugin-', '', $info['shipping_method']);
-    $class = shipping_plugin_get_plugin_class_init('quotes', $plugin);
+    $class = commerce_commerce_shipping_plugin_get_plugin_class_init('quotes', $plugin);
     if ($class === FALSE) {
       $form[$name]['invalid']['#markup'] = t('Error getting shipping method.');
     }

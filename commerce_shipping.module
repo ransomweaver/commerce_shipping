@@ -184,7 +184,7 @@ function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   // Try to get the title from the plugin.
   if ($line_item_wrapper->shipping_method->value()) {
-    $shipping_method = shipping_plugin_get_plugin('quotes', $line_item_wrapper->shipping_method->value());
+    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $line_item_wrapper->shipping_method->value());
     if (!empty($shipping_method)) {
       return $shipping_method['display_title'];
     }
@@ -308,7 +308,7 @@ function commerce_shipping_method_instance_load($instance_id) {
   }
 
   // First load the shipping method and add the instance ID.
-  $shipping_method = shipping_plugin_get_plugin('quotes', $method_id);
+  $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $method_id);
   $shipping_method['instance_id'] = $instance_id;
 
   // Then load the Rule configuration that enables the method.
@@ -405,7 +405,7 @@ function commerce_shipping_commerce_price_component_type_info() {
  *
  * @return array of ctools plugin definitions.
  */
-function shipping_plugin_get_plugins($plugin_type = 'quotes') {
+function commerce_shipping_plugin_get_plugins($plugin_type = 'quotes') {
   ctools_include('plugins');
   $plugins = ctools_get_plugins('commerce_shipping', $plugin_type);
   foreach ($plugins as $id => &$plugin) {
@@ -422,7 +422,7 @@ function shipping_plugin_get_plugins($plugin_type = 'quotes') {
 /**
  * Util function to get shipping plugins.
  */
-function shipping_plugin_get_plugin($plugin_type, $id) {
+function commerce_shipping_plugin_get_plugin($plugin_type, $id) {
   ctools_include('plugins');
   $plugin = ctools_get_plugins('commerce_shipping', $plugin_type, $id);
   if (!isset($plugin['method_id'])) {
@@ -437,8 +437,8 @@ function shipping_plugin_get_plugin($plugin_type, $id) {
 /**
  * Util function to get shipping plugin class.
  */
-function shipping_plugin_get_plugin_class($plugin_type, $id) {
-  $plugin =  shipping_plugin_get_plugin($plugin_type, $id);
+function commerce_shipping_plugin_get_plugin_class($plugin_type, $id) {
+  $plugin =  commerce_shipping_plugin_get_plugin($plugin_type, $id);
   if (is_array($plugin) && isset($plugin['handler']['class'])) {
     return $plugin['handler']['class'];
   }
@@ -448,8 +448,8 @@ function shipping_plugin_get_plugin_class($plugin_type, $id) {
 /**
  * Util function to return a instancesiated plugin class.
  */
-function shipping_plugin_get_plugin_class_init($plugin_type, $id) {
-  $class = shipping_plugin_get_plugin_class($plugin_type, $id);
+function commerce_shipping_plugin_get_plugin_class_init($plugin_type, $id) {
+  $class = commerce_shipping_plugin_get_plugin_class($plugin_type, $id);
   if ($class) {
     return new $class();
   }
