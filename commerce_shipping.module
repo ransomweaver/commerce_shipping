@@ -322,7 +322,9 @@ function commerce_shipping_method_instance_load($instance_id) {
       if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['shipping_label'])) {
         $shipping_method['shipping_label'] = $action->settings['shipping_method']['shipping_label'];
       }
-      $shipping_method['settings'] = !empty($action->settings['shipping_method']['settings']) ? $action->settings['shipping_method']['settings'] : array();
+      if (is_array($action->settings['shipping_method']['settings'])) {
+        $shipping_method['settings'] = $action->settings['shipping_method']['settings'];
+      }
     }
   }
 
@@ -402,9 +404,6 @@ function commerce_shipping_commerce_price_component_type_info() {
  *    The quote plugin array passed by reference.
  */
 function commerce_shipping_set_default_quotes_values(&$plugin) {
-  if (!isset($plugin['method_id'])) {
-    $plugin['method_id'] = $id;
-  }
   if (!isset($plugin['display_title'])) {
     $plugin['display_title'] = $plugin['title'];
   }
@@ -416,6 +415,9 @@ function commerce_shipping_set_default_quotes_values(&$plugin) {
   }
   if (!isset($plugin['shipping_label'])) {
     $plugin['settings'] = '';
+  }
+  if (!isset($plugin['price_component'])) {
+    $plugin['price_component'] = array();
   }
 }
 
@@ -432,6 +434,9 @@ function commerce_shipping_plugin_get_plugins($plugin_type = 'quotes') {
   $plugins = ctools_get_plugins('commerce_shipping', $plugin_type);
   foreach ($plugins as $id => &$plugin) {
     if ($plugin_type == 'quotes') {
+      if (!isset($plugin['method_id'])) {
+        $plugin['method_id'] = $id;
+      }
       commerce_shipping_set_default_quotes_values($plugin);
     }
   }
@@ -445,6 +450,9 @@ function commerce_shipping_plugin_get_plugin($plugin_type, $id) {
   ctools_include('plugins');
   $plugin = ctools_get_plugins('commerce_shipping', $plugin_type, $id);
   if ($plugin_type == 'quotes') {
+    if (!isset($plugin['method_id'])) {
+      $plugin['method_id'] = $id;
+    }
     commerce_shipping_set_default_quotes_values($plugin);
   }
   return $plugin;

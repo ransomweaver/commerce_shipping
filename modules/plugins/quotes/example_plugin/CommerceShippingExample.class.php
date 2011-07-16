@@ -88,18 +88,15 @@ class CommerceShippingExample extends CommerceShippingQuote {
       $order = $this->order;
     }
     $settings = $this->settings;
-    // For this simple method, the price is always 42.
     $shipping_line_items = array();
-    $amount = isset($settings['shipping_price']) ? $settings['shipping_price'] : 42;
     $shipping_line_items[] = array(
-      'amount' => commerce_currency_decimal_to_amount($amount, $currency_code),
+      'amount' => commerce_currency_decimal_to_amount($settings['shipping_price'], $currency_code),
       'currency_code' => $currency_code,
       'label' => t('Normal shipping'),
     );
     if (isset($form_values['express']) && $form_values['express']) {
-      $amount = isset($settings['shipping_price']) ? $settings['shipping_price'] : 42;
       $shipping_line_items[] = array(
-        'amount' => commerce_currency_decimal_to_amount($amount, $currency_code),
+        'amount' => commerce_currency_decimal_to_amount($settings['shipping_price'], $currency_code),
         'currency_code' => $currency_code,
         'label' => t('Express fee'),
       );
