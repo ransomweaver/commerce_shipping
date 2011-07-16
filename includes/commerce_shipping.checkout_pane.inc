@@ -84,9 +84,8 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
     // Store the invoked plugin class of the selected shipping methof for
     // later use.
-    $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
-    $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_info['method_id']);
-    $class = new $plugin['handler']['class']($method_instance['settings'], $order);
+    $plugin = commerce_shipping_method_instance_load($pane_form['shipping_method']['#default_value']);
+    $class = new $plugin['handler']['class']($plugin['settings'], $order);
     $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
     $pane_form['commerce_shipping_plugin'] = array(
       '#type' => 'value',
@@ -159,13 +158,13 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     $form_values = isset($form_state['values']['commerce_shipping']['shipping_details']) ? $form_state['values']['commerce_shipping']['shipping_details'] : array();
 
     // Let the shipping method calculate the shipping price.
-    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
+    $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_id);
     $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
 
     // Loop through the result and create line items if possible.
-    if (isset($shipping_line_items) && is_array($shipping_line_items)) {
+    if (is_array($shipping_line_items)) {
       foreach ($shipping_line_items as $shipping_line_item) {
-        $line_item = commerce_shipping_line_item_new($shipping_method);
+        $line_item = commerce_shipping_line_item_new($plugin['name']);
         $line_item->order_id = $order->order_id;
         $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
         if (is_numeric($shipping_line_item)) {

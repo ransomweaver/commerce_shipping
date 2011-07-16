@@ -444,11 +444,8 @@ function commerce_shipping_plugin_get_plugins($plugin_type = 'quotes') {
 function commerce_shipping_plugin_get_plugin($plugin_type, $id) {
   ctools_include('plugins');
   $plugin = ctools_get_plugins('commerce_shipping', $plugin_type, $id);
-  if (!isset($plugin['method_id'])) {
-    $plugin['method_id'] = $id;
-  }
-  if (!isset($plugin['display_title'])) {
-    $plugin['display_title'] = $plugin['title'];
+  if ($plugin_type == 'quotes') {
+    commerce_shipping_set_default_quotes_values($plugin);
   }
   return $plugin;
 }

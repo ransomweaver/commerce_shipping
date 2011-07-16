@@ -42,7 +42,7 @@ function commerce_shipping_rules_action_info() {
             'type' => 'commerce_shipping_settings',
             'restriction' => 'input',
             'label' => t('Shipping settings'),
-            'shipping_method' => 'plugin-' . $key,
+            'shipping_method' => $key,
           ),
         ),
         'group' => t('Commerce Shipping'),
@@ -92,11 +92,10 @@ function commerce_shipping_enable_method($order, $shipping_method, $action_setti
   // Initialize variables for the shipping method ID and settings.
   if (is_array($shipping_method)) {
     $method_id = $shipping_method['method_id'];
-    $settings = !empty($shipping_method['settings']) ? $shipping_method['settings'] : array();
   }
   else {
     $method_id = $shipping_method;
-    $settings = array();
+    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $method_id);
   }
   // Create a unique key for the instance of the shipping method represented by
   // this action.
@@ -106,7 +105,8 @@ function commerce_shipping_enable_method($order, $shipping_method, $action_setti
 
   $order->shipping_methods[$instance_id] = array(
     'method_id' => $method_id,
-    'settings' => $settings,
+    'settings' => $shipping_method['settings'],
+    'plugin' => $shipping_method,
     'rule_name' => $rule->name,
     'label' => $rule->label,
   );
@@ -133,7 +133,7 @@ class RulesDataUIShippingSettings extends RulesDataUI implements RulesDataDirect
 
   public static function inputForm($name, $info, $settings, RulesPlugin $element) {
     $plugin = str_replace('plugin-', '', $info['shipping_method']);
-    $class = commerce_commerce_shipping_plugin_get_plugin_class_init('quotes', $plugin);
+    $class = commerce_shipping_plugin_get_plugin_class_init('quotes', $plugin);
     if ($class === FALSE) {
       $form[$name]['invalid']['#markup'] = t('Error getting shipping method.');
     }
