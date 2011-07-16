@@ -82,7 +82,8 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     $pane_form['shipping_method']['#default_value'] = $default_value;
     $pane_form['shipping_details'] = array();
 
-    // Add the shipping method specific form elements.
+    // Store the invoked plugin class of the selected shipping methof for
+    // later use.
     $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
     $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_info['method_id']);
     $class = new $plugin['handler']['class']($method_instance['settings'], $order);
@@ -111,22 +112,20 @@ function commerce_shipping_pane_checkout_form_details_refresh($form, $form_state
 function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  $class = $pane_form['commerce_shipping_plugin']['#value'];
   if (!isset($pane_values['shipping_details'])) {
     $pane_values['shipping_details'] = array();
-  }
-  if (isset($pane_form['commerce_shipping_plugin'])) {
-    $class = $pane_form['commerce_shipping_plugin']['#value'];
   }
 
   // Only attempt validation if there were shipping methods available.
   if ($pane_values['shipping_methods']) {
-    // If the selected shipping method was changed...
+    // If the selected shipping method was changed, we always need to rebuild
+    // to update the plugin class.
     if ($pane_values['shipping_method'] != $pane_form['shipping_method']['#default_value']) {
-      // And the newly selected method has a valid form callback...
-      // Always rebuild for plugins.
       return FALSE;
     }
 
+    // Run the validation that the plugin class inplements.
     $result = $class->submit_form_validate($pane_form['shipping_details'], $pane_values['shipping_details'], array($checkout_pane['pane_id'], 'shipping_details'), $order);
     return $result === FALSE ? FALSE : TRUE;
   }
@@ -145,11 +144,9 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
-  if (isset($pane_form['commerce_shipping_plugin'])) {
-    $class = $pane_form['commerce_shipping_plugin']['#value'];
-    $rule_ids = explode('|', $pane_values['shipping_method']);
-    $method_id = $rule_ids[0];
-  }
+  $class = $pane_form['commerce_shipping_plugin']['#value'];
+  $rule_ids = explode('|', $pane_values['shipping_method']);
+  $method_id = $rule_ids[0];
 
   // Only process if there were shipping methods available.
   if ($pane_values['shipping_methods']) {
@@ -162,21 +159,8 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     $form_values = isset($form_state['values']['commerce_shipping']['shipping_details']) ? $form_state['values']['commerce_shipping']['shipping_details'] : array();
 
     // Let the shipping method calculate the shipping price.
-    if (isset($class)) {
-      $shipping_method = commerce_shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
-      $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
-    }
-    else {
-      $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
-      if ($callback = commerce_shipping_method_callback($shipping_method, 'calculate_shipping')) {
-        // Setup variables for the calcualte_shipping function.
-        $settings = array(
-          'checkout_settings' => $form_values,
-          'rules_settings' => $shipping_method['settings'],
-        );
-        $shipping_line_items = $callback($settings, $order, $default_currency_code);
-      }
-    }
+    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_id));
+    $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
 
     // Loop through the result and create line items if possible.
     if (isset($shipping_line_items) && is_array($shipping_line_items)) {
