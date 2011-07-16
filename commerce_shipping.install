@@ -22,3 +22,60 @@ function commerce_shipping_update_7001(&$sandbox) {
   commerce_order_configure_customer_profile_type($profile_type['type'], $profile_type['name']);
   return t('Commerce customer profile field added to commerce order.');
 }
+
+/**
+ * Remove all old shipping rules and convert plugin type shipping rules to use
+ * the new naming convention.
+ */
+function commerce_shipping_update_7002(&$sandbox) {
+  $rules = rules_config_load_multiple(FALSE);
+
+  $deleted = 0;
+  $renamed = 0;
+
+  foreach ($rules as $rule) {
+    if ($rule->module == 'commerce_shipping') {
+    	if (strpos($rule->name, 'commerce_shipping_plugin') !== FALSE) {
+     		rules_config_delete(array($rule->id));
+     		$deleted += 1;
+    	}
+    }
+  }
+
+  $rules_actions_to_rename = array();
+
+  foreach ($rules as $rule) {
+    if ($rule->module == 'commerce_shipping' && strpos($rule->name, 'commerce_shipping_plugin') === FALSE) {
+      $rule->name = str_replace('commerce_shipping_plugin', 'commerce_shipping', $rule->name);
+      $rules_actions_to_rename[] = $rule->name;
+      foreach ($rule->actions() as $action) {
+        if (!empty($action->settings['shipping_method'])) {
+          $action->settings['shipping_method'] = str_replace('plugin-', '', $action->settings['shipping_method']);
+          $action->save();
+        }
+      }
+      $rule->save();
+      $renamed += 1;
+    }
+  }
+
+  // Rules doesn't provide any APIs to change the elementName of rule actions, so we modify them directly in the database.
+  $result = db_select('rules_config', 'r')
+    ->fields('r', array('data', 'id'))
+    ->condition('r.name', $rules_actions_to_rename, 'IN')
+    ->execute();
+
+  foreach ($result as $row) {
+    preg_match('/(\d+):"commerce_shipping_enable_plugin-/', $row->data, $matches);
+    if (!empty($matches[1])) {
+      $replace = $matches[1] - 7;
+      $data = preg_replace('/\d+(:"commerce_shipping_enable_)plugin-/', $replace . '$1' , $row->data);
+      db_update('rules_config')
+        ->fields(array('data' => $row->data))
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+
+  return t('Deleted @deleted shipping and renamed @renamed shipping rules', array('@deleted' => $deleted, '@renamed' => $renamed));
+}

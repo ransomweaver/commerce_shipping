@@ -12,24 +12,6 @@
 function commerce_shipping_default_rules_configuration() {
   $rules = array();
 
-  // Add a default rule for each available shipping method.
-  // TODO, this should be depricated at some point.
-  foreach (commerce_shipping_methods() as $method_id => $shipping_method) {
-    $rule = rules_reaction_rule();
-
-    $rule->label = $shipping_method['title'];
-    $rule->active = FALSE;
-
-    $rule
-      ->event('commerce_shipping_methods')
-      ->action('commerce_shipping_enable_' . $method_id, array(
-        'commerce_order:select' => 'commerce-order',
-        'shipping_method' => $method_id,
-      ));
-
-    $rules['commerce_shipping_' . $method_id] = $rule;
-  }
-
   // Add a default rule fore each available plugin.
   foreach (shipping_plugin_get_plugins('quotes') as $key => $plugin) {
     // Don't create rule if plugin don't want it.
@@ -41,12 +23,12 @@ function commerce_shipping_default_rules_configuration() {
 
       $rule
         ->event('commerce_shipping_methods')
-        ->action('commerce_shipping_enable_plugin-' . $key, array(
+        ->action('commerce_shipping_enable_' . $key, array(
           'commerce_order:select' => 'commerce-order',
-          'shipping_method' => 'plugin-' . $key,
+          'shipping_method' => $key,
         ));
 
-      $rules['commerce_shipping_plugin_' . $key] = $rule;
+      $rules['commerce_shipping_' . $key] = $rule;
     }
   }
 

@@ -27,30 +27,16 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
   // Generate an array of shipping method options for the checkout form.
   $options = array();
-
   foreach ($order->shipping_methods as $instance_id => $method_info) {
-    // Ensure we've received a valid shipping method.
-    if ($shipping_method = commerce_shipping_method_load($method_info['method_id'])) {
-      if ($callback = commerce_shipping_method_callback($shipping_method, 'form_label')) {
-        $options[$instance_id] = $callback($shipping_method, $method_instance, $order);
-      }
-      else {
-        $method_instance = commerce_shipping_method_instance_load($instance_id);
-        $options[$instance_id] = !empty($method_instance['shipping_label']) ?
-          $method_instance['shipping_label'] : $shipping_method['display_title'];
-      }
+    $plugin = commerce_shipping_method_instance_load($instance_id);
+    $class = new $plugin['handler']['class'](array(), $order);
+    if ($class->form_label()) {
+      $options[$instance_id] = $class->form_label();
     }
-    elseif ($plugin = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_info['method_id']))) {
-      $class = new $plugin['handler']['class'](array(), $order);
-      if ($class->form_label()) {
-        $options[$instance_id] = $class->form_label();
-      }
-      else {
-        $method_instance = commerce_shipping_method_instance_load($instance_id);
-        $plugin_title = isset($plugin['display_title']) ? $plugin['display_title'] : $plugin['title'];
-        $options[$instance_id] = !empty($method_instance['shipping_label']) ?
-          $method_instance['shipping_label'] : $plugin_title;
-      }
+    else {
+      $plugin_title = isset($plugin['display_title']) ? $plugin['display_title'] : $plugin['title'];
+      $options[$instance_id] = !empty($plugin['shipping_label']) ?
+        $plugin['shipping_label'] : $plugin_title;
     }
   }
 
@@ -98,22 +84,14 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
     // Add the shipping method specific form elements.
     $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
-    $shipping_method = commerce_shipping_method_load($method_info['method_id']);
-    if ($shipping_method) {
-      if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form')) {
-        $pane_form['shipping_details'] = $callback($shipping_method, $pane_values, $checkout_pane, $order);
-      }
-    }
-    else {
-      $plugin = shipping_plugin_get_plugin('quotes', str_replace('plugin-', '', $method_info['method_id']));
-      $settings = isset($method_instance['settings']) ? $method_instance['settings'] : array();
-      $class = new $plugin['handler']['class']($settings, $order);
-      $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
-      $pane_form['commerce_shipping_plugin'] = array(
-        '#type' => 'value',
-        '#value' => $class
-      );
-    }
+    $plugin = shipping_plugin_get_plugin('quotes', $method_info['method_id']);
+    $settings = isset($method_instance['settings']) ? $method_instance['settings'] : array();
+    $class = new $plugin['handler']['class']($settings, $order);
+    $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
+    $pane_form['commerce_shipping_plugin'] = array(
+      '#type' => 'value',
+      '#value' => $class
+    );
 
     $pane_form['shipping_details']['#prefix'] = '<div id="shipping-details">';
     $pane_form['shipping_details']['#suffix'] = '</div>';
@@ -146,36 +124,12 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
     // If the selected shipping method was changed...
     if ($pane_values['shipping_method'] != $pane_form['shipping_method']['#default_value']) {
       // And the newly selected method has a valid form callback...
-      if (isset($class)) {
-        // Always rebuild for plugins.
-        return FALSE;
-      }
-      elseif ($shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method'])) {
-        if (commerce_shipping_method_callback($shipping_method, 'submit_form')) {
-          // Fail validation so the form is rebuilt to include the shipping method
-          // specific form elements.
-          return FALSE;
-        }
-      }
+      // Always rebuild for plugins.
+      return FALSE;
     }
 
-    if (isset($class)) {
-      $result = $class->submit_form_validate($pane_form['shipping_details'], $pane_values['shipping_details'], array($checkout_pane['pane_id'], 'shipping_details'), $order);
-      return $result === FALSE ? FALSE : TRUE;
-    }
-    else {
-      // Delegate validation to the shipping method callback.
-      $shipping_method = commerce_shipping_method_instance_load($pane_values['shipping_method']);
-
-      if ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form_validate')) {
-        $result = $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order, array($checkout_pane['pane_id'], 'shipping_details'));
-
-        // To prevent shipping method validation routines from having to return TRUE
-        // explicitly, only return FALSE if it was specifically returned.  Otherwise
-        // default to TRUE.
-        return $result === FALSE ? FALSE : TRUE;
-      }
-    }
+    $result = $class->submit_form_validate($pane_form['shipping_details'], $pane_values['shipping_details'], array($checkout_pane['pane_id'], 'shipping_details'), $order);
+    return $result === FALSE ? FALSE : TRUE;
   }
   // Nothing to validate.
   return TRUE;
@@ -266,11 +220,6 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
     // This is not actually needed, but for flexibility allow shipping methods
     // to react on the form submission.
-    if (isset($class)) {
-      $class->shipping_items_created($pane_form['shipping_details'], $pane_values['shipping_details'], $order);
-    }
-    elseif ($callback = commerce_shipping_method_callback($shipping_method, 'submit_form_submit')) {
-      $callback($shipping_method, $pane_form['shipping_details'], $pane_values['shipping_details'], $order);
-    }
+    $class->shipping_items_created($pane_form['shipping_details'], $pane_values['shipping_details'], $order);
   }
 }

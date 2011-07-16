@@ -105,94 +105,6 @@ function commerce_shipping_commerce_customer_profile_type_info() {
 }
 
 /**
- * Returns an array of shipping methods defined by enabled modules.
- *
- * @return
- *   An associative array of shipping method objects keyed by the method_id.
- */
-function commerce_shipping_methods() {
-  $shipping_methods = &drupal_static(__FUNCTION__);
-
-  // If the shipping methods haven't been defined yet, do so now.
-  if (!isset($shipping_methods)) {
-    $shipping_methods = module_invoke_all('commerce_shipping_method_info');
-    drupal_alter('commerce_shipping_method_info', $shipping_methods);
-
-    foreach ($shipping_methods as $method_id => &$shipping_method) {
-      $defaults = array(
-        'method_id' => $method_id,
-        'base' => $method_id,
-        'title' => '',
-        'description' => '',
-      );
-
-      $shipping_method += $defaults;
-
-      // Default the display title to the title if necessary.  The display title
-      // is used in instances where the shipping method has an official name used
-      // as the title (i.e. UPS) but a different method of display on
-      // selection forms (like some text and a set of images).
-      if (empty($shipping_method['display_title'])) {
-        $shipping_method['display_title'] = $shipping_method['title'];
-      }
-
-      // Default the short title to the title if necessary.  Like the display
-      // title, the short title is an alternate way of displaying the title to
-      // the user consisting of plain text but with unnecessary information
-      // stripped off.  The shipping method title might be UPS Express as it
-      // distinguishes itself from other UPS shipping services, but you would
-      // only want to display UPS to the customer as their means of shipment.
-      if (empty($shipping_methods[$method_id]['short_title'])) {
-        $shipping_method['short_title'] = $shipping_method['title'];
-      }
-
-      // Merge in default callbacks.
-      foreach (array('settings_form', 'calculate_shipping', 'submit_form', 'submit_form_validate', 'submit_form_submit', 'form_label') as $callback) {
-        if (!isset($shipping_method['callbacks'][$callback])) {
-          $shipping_method['callbacks'][$callback] = $shipping_method['base'] . '_' . $callback;
-        }
-      }
-    }
-  }
-
-  return $shipping_methods;
-}
-
-/**
- * Returns the specified callback for the given shipping method if it exists.
- *
- * @param $shipping_method
- *   The shipping method object.
- * @param $callback
- *   The callback function to return, one of:
- *   - settings_form
- *
- * @return
- *   A string containing the name of the callback function or FALSE if it could
- *     not be found.
- */
-function commerce_shipping_method_callback($shipping_method, $callback) {
-  // If the specified callback function exists, return it.
-  if (!empty($shipping_method['callbacks'][$callback]) &&
-      function_exists($shipping_method['callbacks'][$callback])) {
-    return $shipping_method['callbacks'][$callback];
-  }
-
-  // Otherwise return FALSE.
-  return FALSE;
-}
-
-/**
- * Get the shipping method object for a specific shipping method.
- *
- * @return shipping method object if it exist false otherwise.
- */
-function commerce_shipping_method_load($shipping_method) {
-  $shipping_methods = commerce_shipping_methods();
-  return isset($shipping_methods[$shipping_method]) ? $shipping_methods[$shipping_method] : FALSE;
-}
-
-/**
  * Ensures the shipping line item type contains a field for shippong method.
  *
  * This function is called by the line item module when it is enabled or this
@@ -271,12 +183,7 @@ function commerce_shipping_get_shipping_methods_options() {
 function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   // Try to get the value from the selected shipping method
-  if ($line_item_wrapper->shipping_method->value()) {
-    $shipping_method = commerce_shipping_method_load($line_item_wrapper->shipping_method->value());
-    if (!empty($shipping_method)) {
-      return $shipping_method['title'];
-    }
-  }
+  // TODO Fix for plugins
   return t('Unknown shipping method');
 }
 
@@ -395,7 +302,7 @@ function commerce_shipping_method_instance_load($instance_id) {
   }
 
   // First load the shipping method and add the instance ID.
-  $shipping_method = commerce_shipping_method_load($method_id);
+  $shipping_method = shipping_plugin_get_plugin('quotes', $method_id);
   $shipping_method['instance_id'] = $instance_id;
 
   // Then load the Rule configuration that enables the method.
@@ -404,17 +311,14 @@ function commerce_shipping_method_instance_load($instance_id) {
   // Iterate over its actions to find one with the matching element ID and pull
   // its settings into the shipping method object.
   $shipping_method['settings'] = array();
-
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
-      $shipping_method['shipping_label'] = (
-        isset($action->settings['shipping_method']) &&
-        is_array($action->settings['shipping_method']) &&
-        isset($action->settings['shipping_method']['shipping_label'])
-      ) ? $action->settings['shipping_method']['shipping_label'] : '';
-      if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['settings'])) {
-        $shipping_method['settings'] = $action->settings['shipping_method']['settings'];
+      $shipping_method['shipping_label'] = '';
+      // Set label if we have any set.
+      if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['shipping_label'])) {
+        $shipping_method['shipping_label'] = $action->settings['shipping_method']['shipping_label'];
       }
+      $shipping_method['settings'] = !empty($action->settings['shipping_method']['settings']) ? $action->settings['shipping_method']['settings'] : array();
     }
   }
 
