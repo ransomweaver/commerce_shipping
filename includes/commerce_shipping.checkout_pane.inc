@@ -29,7 +29,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   $options = array();
   foreach ($order->shipping_methods as $instance_id => $method_info) {
     $plugin = commerce_shipping_method_instance_load($instance_id);
-    $class = new $plugin['handler']['class'](array(), $order);
+    $class = new $plugin['handler']['class']($plugin['settings'], $order);
     if ($class->form_label()) {
       $options[$instance_id] = $class->form_label();
     }

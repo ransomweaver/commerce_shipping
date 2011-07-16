@@ -182,9 +182,15 @@ function commerce_shipping_get_shipping_methods_options() {
  */
 function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  // Try to get the value from the selected shipping method
-  // TODO Fix for plugins
-  return t('Unknown shipping method');
+  // Try to get the title from the plugin.
+  if ($line_item_wrapper->shipping_method->value()) {
+    $shipping_method = shipping_plugin_get_plugin('quotes', $line_item_wrapper->shipping_method->value());
+    if (!empty($shipping_method)) {
+      return $shipping_method['display_title'];
+    }
+  }
+  // Fallback to the line item label.
+  return $line_item->line_item_label;
 }
 
 
