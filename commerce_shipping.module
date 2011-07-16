@@ -388,13 +388,19 @@ function commerce_shipping_line_item_delete($order, $line_item_id, $skip_save = 
  * Implements hook_commerce_price_component_type_info().
  */
 function commerce_shipping_commerce_price_component_type_info() {
-  return array(
+  $price_components = array(
     'quote' => array(
       'title' => t('Shipping costs'),
       'display_title' => t('Shipping costs'),
       'weight' => -40,
     ),
   );
+  foreach (commerce_shipping_plugin_get_plugins() as $plugin) {
+    if (!empty($plugin['price_component'])) {
+      $price_components['quote_' . $plugin['name']] = $plugin['price_component'];
+    }
+  }
+  return $price_components;
 }
 
 /**

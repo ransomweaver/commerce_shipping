@@ -20,4 +20,10 @@ $plugin = array(
   'settings' => array(
     'shipping_price' => 42,
   ),
+  // Define a price component that will be used for this shipping method.
+  'price_component' => array(
+    'title' => t('Shipping costs from example module'),
+    'display_title' => t('Example shipping costs'),
+    'weight' => -40,
+  ),
 );

@@ -183,9 +183,13 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
         }
 
         // Add price component on the line item unit price.
+        $price_component = 'quote';
+        if (!empty($plugin['price_component'])) {
+          $price_component = 'quote_' . $plugin['name'];
+        }
         $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
           $line_item_wrapper->commerce_unit_price->value(),
-          'quote',
+          $price_component,
           $line_item_wrapper->commerce_unit_price->value(),
           TRUE,
           FALSE
