@@ -316,10 +316,8 @@ function commerce_shipping_method_instance_load($instance_id) {
 
   // Iterate over its actions to find one with the matching element ID and pull
   // its settings into the shipping method object.
-  $shipping_method['settings'] = array();
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
-      $shipping_method['shipping_label'] = '';
       // Set label if we have any set.
       if (is_array($action->settings['shipping_method']) && !empty($action->settings['shipping_method']['shipping_label'])) {
         $shipping_method['shipping_label'] = $action->settings['shipping_method']['shipping_label'];
@@ -398,6 +396,30 @@ function commerce_shipping_commerce_price_component_type_info() {
 }
 
 /**
+ * Util function to add a set of default values to quote plugins.
+ *
+ * @param $plugin
+ *    The quote plugin array passed by reference.
+ */
+function commerce_shipping_set_default_quotes_values(&$plugin) {
+  if (!isset($plugin['method_id'])) {
+    $plugin['method_id'] = $id;
+  }
+  if (!isset($plugin['display_title'])) {
+    $plugin['display_title'] = $plugin['title'];
+  }
+  if (!isset($plugin['create_rule'])) {
+    $plugin['create_rule'] = TRUE;
+  }
+  if (!isset($plugin['settings'])) {
+    $plugin['settings'] = array();
+  }
+  if (!isset($plugin['shipping_label'])) {
+    $plugin['settings'] = '';
+  }
+}
+
+/**
  * Get commerce_shipping plugins of a specific type
  *
  * @param $plugin_type
@@ -409,11 +431,8 @@ function commerce_shipping_plugin_get_plugins($plugin_type = 'quotes') {
   ctools_include('plugins');
   $plugins = ctools_get_plugins('commerce_shipping', $plugin_type);
   foreach ($plugins as $id => &$plugin) {
-    if (!isset($plugin['method_id'])) {
-      $plugin['method_id'] = $id;
-    }
-    if (!isset($plugin['display_title'])) {
-      $plugin['display_title'] = $plugin['title'];
+    if ($plugin_type == 'quotes') {
+      commerce_shipping_set_default_quotes_values($plugin);
     }
   }
   return $plugins;

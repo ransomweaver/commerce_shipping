@@ -85,8 +85,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     // Add the shipping method specific form elements.
     $method_info = $order->shipping_methods[$pane_form['shipping_method']['#default_value']];
     $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_info['method_id']);
-    $settings = isset($method_instance['settings']) ? $method_instance['settings'] : array();
-    $class = new $plugin['handler']['class']($settings, $order);
+    $class = new $plugin['handler']['class']($method_instance['settings'], $order);
     $pane_form['shipping_details'] = $class->submit_form($pane_values, $checkout_pane);
     $pane_form['commerce_shipping_plugin'] = array(
       '#type' => 'value',
