@@ -76,12 +76,16 @@ interface CommerceShippingQuoteInterface {
    *    Array of values inputted in the submit form by the user.
    * @param $order
    *    The order for which operations should be done.
+   * @param $pane_form
+   *    The complete form array of the pane that shipping method is located on.
+   * @param $pane_values
+   *    The complete $form_state of the pane that shipping method is located on.
    *
    * @return array of values, one for each line item created containing one of.
    *  - (array) containing any of these keys: 'amount', 'currency_code', 'quantity', 'label'
    *  - (int) the price of the shipping, the order currency will be used, formatted as integer.
    */
-  public function calculate_quote($currency_code, $form_values = array(), $order = NULL);
+  public function calculate_quote($currency_code, $form_values = array(), $order = NULL, $pane_form = NULL, $pane_values = NULL);
 }
 
 
@@ -113,7 +117,7 @@ abstract class CommerceShippingQuote implements CommerceShippingQuoteInterface {
 
   public function submit_form_validate($pane_form, $pane_values, $form_parents = array(), $order = NULL) {}
 
-  public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {}
+  public function calculate_quote($currency_code, $form_values = array(), $order = NULL, $pane_form = NULL, $pane_values = NULL) {}
 
   public function shipping_items_created($pane_values, $checkout_pane, $order = NULL) {}
 }

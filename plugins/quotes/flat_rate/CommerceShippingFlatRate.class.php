@@ -51,7 +51,7 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
     );
   }
 
-  public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {
+  public function calculate_quote($currency_code, $form_values = array(), $order = NULL, $pane_form = NULL, $pane_values = NULL) {
     if (empty($order)) {
       $order = $this->order;
     }

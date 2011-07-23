@@ -159,7 +159,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
     // Let the shipping method calculate the shipping price.
     $plugin = commerce_shipping_plugin_get_plugin('quotes', $method_id);
-    $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order);
+    $shipping_line_items = $class->calculate_quote($default_currency_code, $form_values, $order, $form, $form_state);
 
     // Loop through the result and create line items if possible.
     if (is_array($shipping_line_items)) {

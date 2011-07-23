@@ -83,7 +83,7 @@ class CommerceShippingExample extends CommerceShippingQuote {
    *
    * Only the amount is needed as the rest have default values.
    */
-  public function calculate_quote($currency_code, $form_values = array(), $order = NULL) {
+  public function calculate_quote($currency_code, $form_values = array(), $order = NULL, $pane_form = NULL, $pane_values = NULL) {
     if (empty($order)) {
       $order = $this->order;
     }
