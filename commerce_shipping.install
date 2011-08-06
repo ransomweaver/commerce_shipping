@@ -5,6 +5,19 @@
  */
 
 /**
+ * Implements hook_uninstall().
+ */
+function commerce_shipping_uninstall() {
+  // Delete shipping rules.
+  $rules = rules_config_load_multiple(FALSE);
+  foreach ($rules as $rule) {
+    if (strpos($rule->name, 'commerce_shipping') === 0) {
+      rules_config_delete(array($rule->id));
+    }
+  }
+}
+
+/**
  * Add address field for the commerce_shipping customer profile.
  */
 function commerce_shipping_update_7000(&$sandbox) {
