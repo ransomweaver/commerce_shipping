@@ -334,23 +334,23 @@ function commerce_shipping_method_instance_load($instance_id) {
 /**
  * Creates a new product line item populated with the proper product values.
  *
- * @param $shipping_method
- *   The fully loaded shipping_method that want to create a new line item.
+ * @param $plugin
+ *   The commerce shipping ctools plugin.
  * @param $language
  *   Optionally specify the language for the line item.
  *
  * @return
  *   Line item object with default values.
  */
-function commerce_shipping_line_item_new($shipping_method) {
+function commerce_shipping_line_item_new($plugin) {
   // Create the new line item.
   $line_item = commerce_line_item_new('shipping');
 
-  $line_item->line_item_label = $shipping_method['display_title'];
+  $line_item->line_item_label = $plugin['display_title'];
   $line_item->quantity = 1;
 
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $line_item_wrapper->shipping_method = $shipping_method['method_id'];
+  $line_item_wrapper->shipping_method = $plugin['method_id'];
 
   return $line_item;
 }

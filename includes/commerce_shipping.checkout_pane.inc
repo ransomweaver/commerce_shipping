@@ -164,7 +164,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     // Loop through the result and create line items if possible.
     if (is_array($shipping_line_items)) {
       foreach ($shipping_line_items as $shipping_line_item) {
-        $line_item = commerce_shipping_line_item_new($plugin['name']);
+        $line_item = commerce_shipping_line_item_new($plugin);
         $line_item->order_id = $order->order_id;
         $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
         if (is_numeric($shipping_line_item)) {
