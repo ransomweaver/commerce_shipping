@@ -194,7 +194,6 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
           TRUE,
           FALSE
         );
-        $price = $line_item_wrapper->commerce_unit_price->value();
 
         $line_item_wrapper->save();
         $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
