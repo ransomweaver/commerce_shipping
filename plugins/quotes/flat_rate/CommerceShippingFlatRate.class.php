@@ -24,11 +24,11 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
       );
 
       foreach ($currencies as $currency_code => $currency) {
-        $form['shipping_rates'][$currency_code] = array(
+        $form['shipping_rates'][$currency_code][$currency_code] = array(
           '#type' => 'textfield',
           '#title' => t('Shipping rate (@code)', array('@code' => $currency_code)),
           '#description' => t('Configure what the rate should be.'),
-          '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_rates'][$currency_code]) ? $rules_settings['shipping_rates'][$currency_code] : 42,
+          '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_rates'][$currency_code]) ? $rules_settings['shipping_rates'][$currency_code][$currency_code] : 42,
           '#element_validate' => array('rules_ui_element_decimal_validate'),
         );
       }
@@ -63,13 +63,13 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
       return;
     }
 
-    $options = array('_none' => t('- None -')) +$this->tax_inclusive_types();
+    $options = array('_none' => t('- None -')) + $this->tax_inclusive_types();
     $form['include_tax'] = array(
       '#type' => 'select',
       '#title' => t('Include tax in this rate'),
       '#description' => t('Saving rates tax inclusive will bypass later calculations for the specified tax.'),
       '#options' => count($options) == 1 ? reset($options) : $options,
-      '#default_value' => is_array($rules_settings) && isset($rules_settings['include_tax']) ? $rules_settings['include_tax'] : '',
+      '#default_value' => is_array($rules_settings) && isset($rules_settings['include_tax']) ? $rules_settings['include_tax'] : '_none',
       '#required' => FALSE,
       '#weight' => 1,
     );
@@ -77,12 +77,12 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
     $currencies = commerce_currencies(TRUE);
     if (count($currencies) > 1) {
       foreach ($currencies as $currency_code => $currency) {
-        $form['shipping_rates'][$currency_code . '_include_tax'] = array(
+        $form['shipping_rates'][$currency_code]['include_tax'] = array(
           '#type' => 'select',
           '#title' => t('Include tax in this rate'),
           '#description' => t('Saving rates tax inclusive will bypass later calculations for the specified tax.'),
           '#options' => count($options) == 1 ? reset($options) : $options,
-          '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_rates'][$currency_code . '_include_tax']) ? $rules_settings['shipping_rates'][$currency_code . '_include_tax'] : '',
+          '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_rates'][$currency_code]['include_tax']) ? $rules_settings['shipping_rates'][$currency_code]['include_tax'] : '_none',
           '#required' => FALSE,
         );
       }
@@ -120,14 +120,16 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
     $settings = $this->settings;
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     if (isset($settings['shipping_rates'][$currency_code]) && $settings['shipping_rates'][$currency_code]) {
-      $amount = $settings['shipping_rates'][$currency_code];
+      $amount = $settings['shipping_rates'][$currency_code][$currency_code];
+      $tax_type = !empty($settings['shipping_rates'][$currency_code]['include_tax']) ? $settings['shipping_rates'][$currency_code]['include_tax'] : '_none';
     }
     else {
       $amount = $settings['shipping_price'];
+      $tax_type = !empty($settings['include_tax']) ? $settings['include_tax'] : '_none';
     }
 
     $amount = commerce_currency_decimal_to_amount($amount, $currency_code);
-    if (!empty($settings['include_tax']) && module_exists('commerce_tax') && $tax_rate = commerce_tax_rate_load($settings['include_tax'])) {
+    if ($tax_type != '_none' && module_exists('commerce_tax') && $tax_rate = commerce_tax_rate_load($tax_type)) {
       // Create base price component
       $price = array(
         'amount' => $amount,
