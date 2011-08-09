@@ -168,36 +168,52 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
         $line_item->order_id = $order->order_id;
         $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
         if (is_numeric($shipping_line_item)) {
-          $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item;
-          $line_item_wrapper->commerce_unit_price->currency_code = $default_currency_code;
+          $price = array(
+            'amount' => $shipping_line_item,
+          );
         }
-        elseif (is_array($shipping_line_item) && isset($shipping_line_item['amount'])) {
-          $line_item_wrapper->commerce_unit_price->amount = $shipping_line_item['amount'];
-          $line_item_wrapper->commerce_unit_price->currency_code = isset($shipping_line_item['currency_code']) ? $shipping_line_item['currency_code'] : $default_currency_code;
-          if (isset($shipping_line_item['label'])) {
-            $line_item_wrapper->line_item_label = $shipping_line_item['label'];
-          }
-          if (isset($shipping_line_item['quantity'])) {
-            $line_item_wrapper->quantity = $shipping_line_item['quantity'];
-          }
+        elseif (!empty($shipping_line_item['amount'])) {
+          $price = array(
+            'amount' => $shipping_line_item['amount'],
+            'currency_code' => !empty($shipping_line_item['currency_code']) ? $shipping_line_item['currency_code'] : $default_currency_code,
+          );
+        }
+        elseif (!empty($shipping_line_item['price'])) {
+            $price = $shipping_line_item['price'];
+        }
+        if (isset($shipping_line_item['label'])) {
+          $line_item_wrapper->line_item_label = $shipping_line_item['label'];
+        }
+        if (isset($shipping_line_item['quantity'])) {
+          $line_item_wrapper->quantity = $shipping_line_item['quantity'];
         }
 
-        // Add price component on the line item unit price.
-        $price_component = 'quote';
-        if (!empty($plugin['price_component'])) {
-          $price_component = 'quote_' . $plugin['name'];
-        }
-        $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-          $line_item_wrapper->commerce_unit_price->value(),
-          $price_component,
-          $line_item_wrapper->commerce_unit_price->value(),
-          TRUE,
-          FALSE
-        );
-        rules_invoke_all('commerce_shipping_calculate', $line_item);
+        // Require that the price is set.
+        if (isset($price)) {
+          // Add component if needed
+          if (empty($price['data']['component'])) {
+            $price_component = 'quote';
+            if (!empty($plugin['price_component'])) {
+              $price_component = 'quote_' . $plugin['name'];
+            }
+            $price['data'] = commerce_price_component_add(
+              $price,
+              $price_component,
+              $price,
+              TRUE,
+              FALSE
+            ); 
+          }
+          // Make sure the currency code is set.
+          if (empty($price['currency_code'])) {
+            $price['currency_code'] = $default_currency_code;
+          }
+          $line_item_wrapper->commerce_unit_price = $price;
+          rules_invoke_all('commerce_shipping_calculate', $line_item);
 
-        $line_item_wrapper->save();
-        $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
+          $line_item_wrapper->save();
+          $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
+        }
       }
     }
 
