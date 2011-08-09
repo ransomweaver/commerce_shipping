@@ -10,6 +10,7 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
       '#description' => t('Configure what the rate should be.'),
       '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_price']) ? $rules_settings['shipping_price'] : 42,
       '#element_validate' => array('rules_ui_element_decimal_validate'),
+      '#weight' => 0,
     );
 
     if (count($currencies) > 1) {
@@ -19,6 +20,7 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
         '#type' => 'fieldset',
         '#title' => t('Shipping rates'),
         '#collapsed' => TRUE,
+        '#weight' => 10,
       );
 
       foreach ($currencies as $currency_code => $currency) {
@@ -42,13 +44,73 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
         'line_item' => t('Product types (line items)'),
         'order' => t('Order'),
       ),
+      '#weight' => 100,
     );
 
     $form['label'] = array(
       '#type' => 'textfield',
       '#title' => t('Line item label'),
       '#default_value' => is_array($rules_settings) && isset($rules_settings['label']) ? $rules_settings['label'] : t('Flat rate shipping'),
+      '#weight' => 101,
     );
+
+    // Add tax-related elements if needed.
+    $this->tax_form($form, $rules_settings);
+  }
+
+  private function tax_form(&$form, $rules_settings) {
+    if (!module_exists('commerce_tax')) {
+      return;
+    }
+
+    $options = array('_none' => t('- None -')) +$this->tax_inclusive_types();
+    $form['include_tax'] = array(
+      '#type' => 'select',
+      '#title' => t('Include tax in this rate'),
+      '#description' => t('Saving rates tax inclusive will bypass later calculations for the specified tax.'),
+      '#options' => count($options) == 1 ? reset($options) : $options,
+      '#default_value' => is_array($rules_settings) && isset($rules_settings['include_tax']) ? $rules_settings['include_tax'] : '',
+      '#required' => FALSE,
+      '#weight' => 1,
+    );
+
+    $currencies = commerce_currencies(TRUE);
+    if (count($currencies) > 1) {
+      foreach ($currencies as $currency_code => $currency) {
+        $form['shipping_rates'][$currency_code . '_include_tax'] = array(
+          '#type' => 'select',
+          '#title' => t('Include tax in this rate'),
+          '#description' => t('Saving rates tax inclusive will bypass later calculations for the specified tax.'),
+          '#options' => count($options) == 1 ? reset($options) : $options,
+          '#default_value' => is_array($rules_settings) && isset($rules_settings['shipping_rates'][$currency_code . '_include_tax']) ? $rules_settings['shipping_rates'][$currency_code . '_include_tax'] : '',
+          '#required' => FALSE,
+        );
+      }
+    }
+  }
+
+  /**
+   * @todo Make this a function in commerce_tax.module.
+   * Originally taken from commerce_tax_field_attach_form().
+   */
+  private function tax_inclusive_types() {
+    // Build an array of tax types that are display inclusive.
+    $inclusive_types = array();
+
+    foreach (commerce_tax_types() as $name => $tax_type) {
+      if ($tax_type['display_inclusive']) {
+        $inclusive_types[$name] = $tax_type['title'];
+      }
+    }
+
+    // Build an options array of tax rates of these types.
+    $options = array();
+    foreach (commerce_tax_rates() as $name => $tax_rate) {
+      if (in_array($tax_rate['type'], array_keys($inclusive_types))) {
+        $options[$inclusive_types[$tax_rate['type']]][$name] = t('Including @title', array('@title' => $tax_rate['title']));
+      }
+    }
+    return $options;
   }
 
   public function calculate_quote($currency_code, $form_values = array(), $order = NULL, $pane_form = NULL, $pane_values = NULL) {
@@ -62,6 +124,36 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
     }
     else {
       $amount = $settings['shipping_price'];
+    }
+
+    $amount = commerce_currency_decimal_to_amount($amount, $currency_code);
+    if (!empty($settings['include_tax']) && module_exists('commerce_tax') && $tax_rate = commerce_tax_rate_load($settings['include_tax'])) {
+      // Create base price component
+      $price = array(
+        'amount' => $amount,
+        'currency_code' => $currency_code,
+        'data' => array(),
+      );
+      // Add quote component part.
+      $quote = $price;
+      $quote['amount'] = $price['amount'] / (1 + $tax_rate['rate']);
+      $price['data'] = commerce_price_component_add(
+        $price,
+        'quote',
+        $quote,
+        TRUE,
+        FALSE
+      );
+      // Add tax component part.
+      $tax = $quote;
+      $tax['amount'] = $price['amount'] - $quote['amount'];
+      $price['data'] = commerce_price_component_add(
+        $price,
+        $tax_rate['price_component'],
+        $tax,
+        TRUE,
+        FALSE
+      );
     }
 
     $quantity = 0;
@@ -78,13 +170,18 @@ class CommerceShippingFlatRate extends CommerceShippingQuote {
         }
       }
     }
-    $shipping_line_items = array();
-    $shipping_line_items[] = array(
-      'amount' => commerce_currency_decimal_to_amount($amount, $currency_code),
-      'currency_code' => $currency_code,
+    $line_item_data = array(
       'label' => $settings['label'],
       'quantity' => $quantity,
     );
+    if (!empty($price)) {
+      $line_item_data['price'] = $price;
+    }
+    else {
+      $line_item_data['amount'] = $amount;
+    }
+    $shipping_line_items = array();
+    $shipping_line_items[] = $line_item_data;
     return $shipping_line_items;
   }
 }

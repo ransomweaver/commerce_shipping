@@ -191,7 +191,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
         // Require that the price is set.
         if (isset($price)) {
           // Add component if needed
-          if (empty($price['data']['component'])) {
+          if (empty($price['data']['components'])) {
             $price_component = 'quote';
             if (!empty($plugin['price_component'])) {
               $price_component = 'quote_' . $plugin['name'];
