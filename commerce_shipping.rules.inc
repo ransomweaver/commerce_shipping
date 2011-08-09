@@ -13,12 +13,20 @@
  * Implements hook_rules_event_info().
  */
 function commerce_shipping_rules_event_info() {
+  // The line item rule file is needed for the access callback.
+  module_load_include('inc', 'commerce_line_item', 'commerce_line_item.rules');
   $items = array(
     'commerce_shipping_methods' => array(
       'label' => t('Select available shipping methods for an order'),
       'group' => t('Commerce - shipping'),
       'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
       'access callback' => 'commerce_order_rules_access',
+    ),
+    'commerce_shipping_calculate' => array(
+      'label' => t('Calculate the shipping quote for a line item'),
+      'group' => t('Commerce - shipping'),
+      'variables' => entity_rules_events_variables('commerce_line_item', t('Line Item', array(), array('context' => 'a drupal commerce line item'))),
+      'access callback' => 'commerce_line_item_rules_access',
     ),
   );
 

@@ -194,6 +194,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
           TRUE,
           FALSE
         );
+        rules_invoke_all('commerce_shipping_calculate', $line_item);
 
         $line_item_wrapper->save();
         $order_wrapper->commerce_line_items[] = $line_item_wrapper->value();
