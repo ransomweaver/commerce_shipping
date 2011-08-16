@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -8,14 +7,15 @@
 
 
 /**
- * shipping pane: form callback.
+ * Checkout pane callback: builds a shipping quote selection form.
  */
 function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
+  $pane_form = array();
+
   // TODO, before we active shipping methods etc, we should check that there
   // actually are shippable products. Right not that is not possible because
   // physical products aren't defined yet.
 
-  $pane_form = array();
 
   // Invoke the shipping methods event that will populate the order with
   // an array of method IDs for available shipping methods.
@@ -82,7 +82,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     $pane_form['shipping_method']['#default_value'] = $default_value;
     $pane_form['shipping_details'] = array();
 
-    // Store the invoked plugin class of the selected shipping methof for
+    // Store the invoked plugin class of the selected shipping method for
     // later use.
     $plugin = commerce_shipping_method_instance_load($pane_form['shipping_method']['#default_value']);
     $class = new $plugin['handler']['class']($plugin['settings'], $order);
@@ -202,7 +202,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
               $price,
               TRUE,
               FALSE
-            ); 
+            );
           }
           // Make sure the currency code is set.
           if (empty($price['currency_code'])) {

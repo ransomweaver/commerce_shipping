@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -60,13 +59,13 @@ function commerce_shipping_commerce_line_item_type_info() {
  */
 function commerce_shipping_views_api() {
   return array(
-    'api' => 2,
+    'api' => 3,
     'path' => drupal_get_path('module', 'commerce_shipping') . '/includes/views',
   );
 }
 
 /**
- * Implementation of hook_ctools_plugin_type().
+ * Implements hook_ctools_plugin_type().
  */
 function commerce_shipping_ctools_plugin_type() {
   return array(
@@ -79,7 +78,7 @@ function commerce_shipping_ctools_plugin_type() {
 }
 
 /**
- * Implementation of hook_ctools_plugin_directory().
+ * Implements hook_ctools_plugin_directory().
  */
 function commerce_shipping_ctools_plugin_directory($owner, $plugin_type) {
   if ($owner == 'commerce_shipping') {
@@ -97,15 +96,13 @@ function commerce_shipping_commerce_customer_profile_type_info() {
     'type' => 'shipping',
     'name' => t('Shipping information'),
     'description' => t('The profile used to collect shipping information on the checkout and order forms.'),
-    'help' => '',
-    'addressfield' => TRUE,
   );
 
   return $profile_types;
 }
 
 /**
- * Ensures the shipping line item type contains a field for shippong method.
+ * Ensures the shipping line item type contains a field for shipping method.
  *
  * This function is called by the line item module when it is enabled or this
  * module is enabled. It invokes this function using the configuration_callback
@@ -113,7 +110,7 @@ function commerce_shipping_commerce_customer_profile_type_info() {
  */
 function commerce_shipping_configure_line_item() {
   // TODO: Maybe we should create our own field type to reference the shipping
-  // method. Since we only want to store it's name, list_text should sufice.
+  // method. Since we only want to store its name, list_text should suffice.
 
   $field = field_info_field('shipping_method');
   $instance = field_info_instance('commerce_line_item', 'shipping', 'shipping_method');
@@ -160,16 +157,19 @@ function commerce_shipping_configure_line_item() {
 
 /**
  * Return an array of enabled shipping methods formatted as an options array
- *   used in FAPI.
+ * used in FAPI.
  *
  * @return array of shipping methods.
  */
 function commerce_shipping_get_shipping_methods_options() {
-  // Create a fake order that can be used to attach the shipping methods to.
-  $order = new stdClass();
-  $order->shipping_methods = array();
-  rules_invoke_all('commerce_shipping_methods', $order);
   $options = array();
+
+  // Create a fake order that can be used to attach the shipping methods to.
+  $order = commerce_order_new();
+  $order->shipping_methods = array();
+
+  rules_invoke_all('commerce_shipping_methods', $order);
+
   foreach ($order->shipping_methods as $instance_id => $shipping_method) {
     $options[$instance_id] = $shipping_method['label'];
   }
@@ -182,21 +182,24 @@ function commerce_shipping_get_shipping_methods_options() {
  */
 function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
   // Try to get the title from the plugin.
   if ($line_item_wrapper->shipping_method->value()) {
     $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $line_item_wrapper->shipping_method->value());
+
     if (!empty($shipping_method)) {
       return $shipping_method['display_title'];
     }
   }
+
   // Fallback to the line item label.
   return $line_item->line_item_label;
 }
 
 
 /**
- * Returns the elements necessary to add a product line item through a line item
- *   manager widget.
+ * Returns the elements necessary to add a shipping line item through a line
+ * item manager widget.
  */
 function commerce_shipping_line_item_add_form($form_state) {
   $order = $form_state['commerce_order'];
@@ -232,8 +235,8 @@ function commerce_shipping_line_item_add_form($form_state) {
 }
 
 /**
- * Adds the selected shippng information to a line item added via a line item
- *   manager widget.
+ * Adds the selected shipping information to a line item added via a line item
+ * manager widget.
  *
  * @param $line_item
  *   The newly created line item object.
@@ -250,7 +253,7 @@ function commerce_shipping_line_item_add_form($form_state) {
 function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$form_state, $form) {
   $order = $form_state['commerce_order'];
 
-  // Populate the line item with the product data.
+  // Populate the line item with the shipping data.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $line_item_wrapper->shipping_method = $element['actions']['shipping_method']['#value'];
   $line_item_wrapper->commerce_unit_price->amount = commerce_currency_decimal_to_amount($element['actions']['amount']['#value'], $element['actions']['currency_code']['#value']);
@@ -266,7 +269,7 @@ function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$fo
 
 /**
  * Returns a shipping method instance ID given a shipping method ID and the Rule
- *   containing an enabling action with settings.
+ * containing an enabling action with settings.
  *
  * @param $method_id
  *   The ID of the shipping method.
@@ -282,8 +285,8 @@ function commerce_shipping_method_instance_id($method_id, $rule) {
 }
 
 /**
- * Returns a shipping method instance object which includes the settings specific
- *   to the context of the instance.
+ * Returns a shipping method instance object which includes the settings
+ * specific to the context of the instance.
  *
  * @param $instance_id
  *   A shipping method instance ID in the form of a pipe delimited string
@@ -314,8 +317,8 @@ function commerce_shipping_method_instance_load($instance_id) {
   // Then load the Rule configuration that enables the method.
   $rule = rules_config_load($rule_name);
 
-  // Iterate over its actions to find one with the matching element ID and pull
-  // its settings into the shipping method object.
+  // Iterate over its actions to find one with the matching element name and
+  // pull its settings into the shipping method object.
   foreach ($rule->actions() as $action) {
     if ($action->getElementName() == 'commerce_shipping_enable_' . $method_id) {
       // Set label if we have any set.
@@ -476,7 +479,7 @@ function commerce_shipping_plugin_get_plugin_class($plugin_type, $id) {
 }
 
 /**
- * Util function to return a instancesiated plugin class.
+ * Util function to return a instantiated plugin class.
  */
 function commerce_shipping_plugin_get_plugin_class_init($plugin_type, $id) {
   $class = commerce_shipping_plugin_get_plugin_class($plugin_type, $id);

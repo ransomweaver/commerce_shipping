@@ -14,7 +14,7 @@ function commerce_shipping_ui_menu() {
 
   // Payment method Rules administration page.
   $items['admin/commerce/config/shipping-methods'] = array(
-    'title' => 'Shipping settings',
+    'title' => 'Shipping methods',
     'description' => 'Enable and configure shipping method rule configurations.',
     'page callback' => 'commerce_shipping_ui_admin_page',
     'access arguments' => array('administer shippings'),
