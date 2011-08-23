@@ -1,7 +1,6 @@
-; $Id$
 name = Shipping
 description = Implement core shipping features for Drupal commerce.
-package = Commerce (contrib)
+package = Commerce (shipping)
 dependencies[] = commerce
 dependencies[] = commerce_line_item
 dependencies[] = commerce_payment
