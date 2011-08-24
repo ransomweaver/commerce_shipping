@@ -205,16 +205,10 @@ function commerce_shipping_line_item_add_form($form_state) {
     '#size' => 10,
   );
 
-  // Build a currency options list from all enabled currencies.
-  $options = array();
-  foreach (commerce_currencies(TRUE) as $currency_code => $currency) {
-    $options[$currency_code] = check_plain($currency['code']);
-  }
-
   $form['currency_code'] = array(
     '#type' => 'select',
     '#title' => t('Currency'),
-    '#options' => $options,
+    '#options' => commerce_currency_code_options_list(),
     '#default_value' => commerce_default_currency(),
   );
 
