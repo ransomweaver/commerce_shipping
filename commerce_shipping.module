@@ -6,19 +6,6 @@
  */
 
 /**
- * Implements hook_permission().
- */
-function commerce_shipping_permission() {
-  return array(
-    'administer shippings' => array(
-      'title' => t('Administer shippings'),
-      'description' => t('Allows users to perform any shipping action for any order.'),
-      'restrict access' => TRUE,
-    ),
-  );
-}
-
-/**
  * Implements hook_commerce_checkout_pane_info().
  */
 function commerce_shipping_commerce_checkout_pane_info() {

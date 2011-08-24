@@ -16,7 +16,7 @@ function commerce_shipping_ui_menu() {
     'title' => 'Shipping methods',
     'description' => 'Enable and configure shipping method rule configurations.',
     'page callback' => 'commerce_shipping_ui_admin_page',
-    'access arguments' => array('administer shippings'),
+    'access arguments' => array('configure store'),
     'file' => 'includes/commerce_shipping_ui.admin.inc',
   );
 
