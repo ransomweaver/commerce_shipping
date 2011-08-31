@@ -100,7 +100,7 @@ function commerce_shipping_configure_line_item() {
   // method. Since we only want to store its name, list_text should suffice.
 
   $field = field_info_field('shipping_method');
-  $instance = field_info_instance('commerce_line_item', 'shipping', 'shipping_method');
+  $instance = field_info_instance('commerce_line_item', 'shipping_method', 'shipping');
 
   if (empty($field)) {
     $field = array(
