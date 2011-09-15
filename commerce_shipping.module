@@ -5,6 +5,7 @@
  * Defines the shipping system and checkout integration.
  */
 
+
 /**
  * Implements hook_commerce_checkout_pane_info().
  */
@@ -24,24 +25,6 @@ function commerce_shipping_commerce_checkout_pane_info() {
 }
 
 /**
- * Implements hook_commerce_line_item_info().
- */
-function commerce_shipping_commerce_line_item_type_info() {
-  return array(
-    'shipping' => array(
-      'type' => 'shipping',
-      'name' => t('Shipping'),
-      'description' => t('Reference a shipping type with info about price and delivery.'),
-      'add_form_submit_value' => t('Add shipping'),
-      'base' => 'commerce_shipping_line_item',
-      'callbacks' => array(
-        'configuration' => 'commerce_shipping_configure_line_item',
-      ),
-    ),
-  );
-}
-
-/*
  * Implements hook_views_api().
  */
 function commerce_shipping_views_api() {
@@ -56,7 +39,7 @@ function commerce_shipping_views_api() {
  */
 function commerce_shipping_ctools_plugin_type() {
   return array(
-    // Quotes are used for calculating shipping costs.
+    // Quote plugins are used for calculating shipping costs.
     'quotes' => array(
       'child plugins' => FALSE,
       'classes' => array('handler'),
@@ -69,7 +52,7 @@ function commerce_shipping_ctools_plugin_type() {
  */
 function commerce_shipping_ctools_plugin_directory($owner, $plugin_type) {
   if ($owner == 'commerce_shipping') {
-    return "plugins/$plugin_type";
+    return 'plugins/' . $plugin_type;
   }
 }
 
@@ -89,13 +72,30 @@ function commerce_shipping_commerce_customer_profile_type_info() {
 }
 
 /**
+ * Implements hook_commerce_line_item_info().
+ */
+function commerce_shipping_commerce_line_item_type_info() {
+  $line_item_types = array();
+
+  $line_item_types['shipping'] = array(
+    'type' => 'shipping',
+    'name' => t('Shipping'),
+    'description' => t('References a shipping method and displays it with the service title.'),
+    'add_form_submit_value' => t('Add shipping'),
+    'base' => 'commerce_shipping_line_item',
+  );
+
+  return $line_item_types;
+}
+
+/**
  * Ensures the shipping line item type contains a field for shipping method.
  *
  * This function is called by the line item module when it is enabled or this
  * module is enabled. It invokes this function using the configuration_callback
  * as specified above.
  */
-function commerce_shipping_configure_line_item() {
+function commerce_shipping_line_item_configuration() {
   // TODO: Maybe we should create our own field type to reference the shipping
   // method. Since we only want to store its name, list_text should suffice.
 

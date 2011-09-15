@@ -1,26 +1,35 @@
 <?php
 
 $plugin = array(
-  // Default ctools properties.
+  // Basic CTools plugin properties
   'title' => t('Example plugin'),
-  'description' => t('This plugin is used as an example and documentation of commerce_shipping features.'),
+  'description' => t('This plugin demonstrates the creation of a shipping method and documents various commerce_shipping features.'),
   'handler' => array(
     'class' => 'CommerceShippingExample',
     'parent' => 'quote_base'
   ),
-  // Special Commerce Shipping properties.
-  // Display title, used for many frontend displays. Default value is the
-  // title property.
+
+  // Commerce Shipping properties
+
+  // The display title is used for front end displays. The default value is the
+  // plugin's title property.
   'display_title' => t('Example shipping method'),
-  // The shipping label for select form, default value is display_title.
+
+  // The label of the method on a shipping quote selection form. The default
+  // value is the plugin's display_title property.
   'shipping_label' => t('Example shipping method radio button'),
-  // Boolean indicator indicating if a rule and action should be created.
+
+  // Boolean value indicating whether or not a default Rule and action should be
+  // created for this shipping method.
   'create_rule' => TRUE,
-  // Default settings as defined through the settings form on the rules action.
+
+  // Default settings for the method's Rules action form.
   'settings' => array(
     'shipping_price' => 42,
   ),
-  // Define a price component that will be used for this shipping method.
+
+  // Defines the price component that will be used for the unit price of
+  // shipping line items created for this shipping method.
   'price_component' => array(
     'title' => t('Shipping costs from example module'),
     'display_title' => t('Example shipping costs'),

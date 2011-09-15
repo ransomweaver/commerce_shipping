@@ -2,8 +2,7 @@
 
 class CommerceShippingExample extends CommerceShippingQuote {
   /**
-   * The settings form, used to add our custom settings to the rules action
-   * settings form.
+   * Settings form callback: adds our custom settings to the Rules action form.
    */
   public function settings_form(&$form, $rules_settings) {
     $form['shipping_price'] = array(
@@ -16,21 +15,23 @@ class CommerceShippingExample extends CommerceShippingQuote {
   }
 
   /**
-   * Define a form that is added when this shipping method is selected during
-   * checkout.
+   * Submit form callback: adds additional elements to the checkout pane when
+   * this shipping method is selected.
    */
   public function submit_form($pane_values, $checkout_pane, $order = NULL) {
+    $form = parent::submit_form($pane_values, $checkout_pane, $order);
+
+    // Default to the order in the object's scope if none is explicitly passed in.
     if (empty($order)) {
       $order = $this->order;
     }
-    $form = parent::submit_form($pane_values, $checkout_pane, $order);
 
-    // Merge in values from the order.
+    // Merge values from the order into the checkout pane values.
     if (!empty($order->data['commerce_shipping_example'])) {
       $pane_values += $order->data['commerce_shipping_example'];
     }
 
-    // Merge in default values.
+    // Then merge in default values.
     $pane_values += array(
       'express' => 0,
       'name' => '',
@@ -39,7 +40,7 @@ class CommerceShippingExample extends CommerceShippingQuote {
     $form['express'] = array(
       '#type' => 'checkbox',
       '#title' => t('Express delivery'),
-      '#description' => t('Express delivery cost twice the normal amount.'),
+      '#description' => t('Express delivery costs twice the normal amount.'),
       '#default_value' => $pane_values['express'],
     );
 
@@ -55,9 +56,9 @@ class CommerceShippingExample extends CommerceShippingQuote {
   }
 
   /**
-   * Validation form, to validate the submit form that we can add. If we want
-   * to fail the validation we return FALSE, otherwise nothing needs to be
-   * done.
+   * Submit form validation callback: validates data entered via our custom
+   * submit form elements. Failed validation requires a FALSE return value.
+   * Otherwise nothing needs to be returned.
    */
   public function submit_form_validate($pane_form, $pane_values, $form_parents = array(), $order = NULL) {
     // Throw an error if a long enough name was not provided.
@@ -72,10 +73,10 @@ class CommerceShippingExample extends CommerceShippingQuote {
   }
 
   /**
-   * The bulk of the shipping method is usually found here. This is where we
-   * do the actual calculations to figure out what the shipping costs should
-   * be. We can return a single price or for more control an array of arrays
-   * containing:
+   * Calculate quote callback: the bulk of the shipping method is usually found
+   * here. This is where we do the actual calculations to figure out what the
+   * shipping costs should be. We can return a single price or for more control
+   * an array of arrays containing:
    *    - label
    *    - quantity
    *    - amount
@@ -87,20 +88,25 @@ class CommerceShippingExample extends CommerceShippingQuote {
     if (empty($order)) {
       $order = $this->order;
     }
+
     $settings = $this->settings;
+
     $shipping_line_items = array();
+
     $shipping_line_items[] = array(
       'amount' => commerce_currency_decimal_to_amount($settings['shipping_price'], $currency_code),
       'currency_code' => $currency_code,
       'label' => t('Normal shipping'),
     );
-    if (isset($form_values['express']) && $form_values['express']) {
+
+    if (!empty($form_values['express'])) {
       $shipping_line_items[] = array(
         'amount' => commerce_currency_decimal_to_amount($settings['shipping_price'], $currency_code),
         'currency_code' => $currency_code,
         'label' => t('Express fee'),
       );
     }
+
     return $shipping_line_items;
   }
 }
