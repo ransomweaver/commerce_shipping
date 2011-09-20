@@ -9,7 +9,7 @@
 /**
  * Implements hook_default_rules_configuration().
  */
-function commerce_tax_default_rules_configuration() {
+function commerce_shipping_default_rules_configuration() {
   $rules = array();
 
   // Loop over every shipping service looking for services requiring a default

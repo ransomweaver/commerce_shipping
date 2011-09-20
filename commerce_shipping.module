@@ -335,7 +335,7 @@ function commerce_shipping_service_get_title($name = NULL, $title_type = 'title'
   $shipping_service_titles = array();
 
   foreach ((array) $shipping_services as $key => $value) {
-    $method_title = commerce_shipping_method_title($value['shipping_method']);
+    $method_title = commerce_shipping_method_get_title($value['shipping_method']);
     $shipping_service_titles[$method_title][$key] = $value[$title_type];
   }
 
