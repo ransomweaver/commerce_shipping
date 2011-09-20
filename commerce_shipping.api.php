@@ -12,7 +12,7 @@
  *   the title
  * - description: a basic description of the service
  * - active: boolean indicating whether or not the default Rule for collecting
- *   rates for this shipping method should be defined enabled; defaults to FALSE
+ *   rates for this shipping method should be defined enabled; defaults to TRUE
  * When loaded, a shipping service info array will also contain a module key
  * whose value is the name of the module that defined the service.
  */

@@ -163,7 +163,7 @@ function commerce_shipping_methods() {
         'name' => $name,
         'display_title' => $shipping_method['title'],
         'description' => '',
-        'active' => FALSE,
+        'active' => TRUE,
       );
 
       $shipping_method += $defaults;
