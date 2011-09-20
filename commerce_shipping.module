@@ -161,30 +161,12 @@ function commerce_shipping_methods() {
     foreach ($shipping_methods as $name => &$shipping_method) {
       $defaults = array(
         'name' => $name,
-        'base' => $name,
-        'title' => '',
+        'display_title' => $shipping_method['title'],
         'description' => '',
         'active' => FALSE,
-        'callbacks' => array(),
-        'file' => '',
       );
 
       $shipping_method += $defaults;
-
-      // Default the display title to the title if necessary.  The display title
-      // is used in instances where the shipping method has an official name
-      // used as the title (e.g. UPS) but a different method of display on
-      // selection forms (e.g. the UPS logo and title).
-      if (empty($shipping_method['display_title'])) {
-        $shipping_method['display_title'] = $shipping_method['title'];
-      }
-
-      // Merge in default callbacks.
-      foreach (array() as $callback) {
-        if (!isset($shipping_method['callbacks'][$callback])) {
-          $shipping_method['callbacks'][$callback] = $shipping_method['base'] . '_' . $callback;
-        }
-      }
     }
   }
 
@@ -282,6 +264,7 @@ function commerce_shipping_services() {
           'display_title' => $shipping_service['title'],
           'description' => '',
           'shipping_method' => '',
+          'rate_callback' => '',
           'rules_component' => TRUE,
           'price_component' => 'shipping|' . $name,
           'module' => $module,
@@ -352,8 +335,12 @@ function commerce_shipping_service_get_title($name = NULL, $title_type = 'title'
   $shipping_service_titles = array();
 
   foreach ((array) $shipping_services as $key => $value) {
-    $shipping_service_titles[$key] = $value[$title_type];
+    $method_title = commerce_shipping_method_title($value['shipping_method']);
+    $shipping_service_titles[$method_title][$key] = $value[$title_type];
   }
+
+  // Sort the title groups by method title.
+  ksort($shipping_service_titles);
 
   return $shipping_service_titles;
 }
@@ -398,6 +385,26 @@ function commerce_shipping_method_collect_rates($shipping_method, $order) {
   // Allow modules handling shipping service calculation on their own to return
   // services for this method, too.
   module_invoke_all('commerce_shipping_method_collect_rates', $shipping_method, $order);
+}
+
+/**
+ * Adds a shipping rate to the given order object for the specified service.
+ *
+ * @param $service
+ *   The machine-name of the shipping service to rate.
+ * @param $order
+ *   The order for which the shipping service should be rated.
+ */
+function commerce_shipping_service_rate_order($service, $order) {
+  // Load the full shipping service info array.
+  $shipping_service = commerce_shipping_service_load($service);
+
+  // If the service specifies a rate callback...
+  if (!empty($shipping_service['rate_callback'])) {
+    // Call the function and add its return value to the order's rate array.
+    $callback = $shipping_service['rate_callback'];
+    $order->shipping_rates[$service] = $callback($order, $shipping_service);
+  }
 }
 
 /**
