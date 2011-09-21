@@ -48,15 +48,15 @@ function commerce_shipping_method_info() {
  *   service with the following keys:
  *   - details_form: the function used to generate a details form array for the
  *     shipping service to collect additional information related to the service
- *     on the checkout / admin forms; details form callbacks are passed four
- *     parameters, ($pane_form, $pane_values, $checkout_pane, $shipping_service)
+ *     on the checkout / admin forms; details form callbacks are passed five
+ *     parameters, ($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
  *   - details_form_validate: the function used to validate input on the service
  *     details form; details form validate callbacks are passed five parameters,
- *     $pane_form['service_details'], $pane_values['service_details'], $shipping_service, $order, array($checkout_pane['pane_id'], 'service_details')
+ *     ($details_form, $details_values, $shipping_service, $order, $form_parents)
  *   - details_form_submit: the function used to perform any additional
  *     processing required on a shipping line item in light of the details form;
  *     details form submit callbacks are passed three parameters,
- *     ($pane_form['service_details'], $pane_values['service_details'], $line_item)
+ *     ($details_form, $details_values, $line_item)
  * When loaded, a shipping service info array will also contain a module key
  * whose value is the name of the module that defined the service.
  */

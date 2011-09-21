@@ -43,40 +43,49 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     // stored as a line item on the order or the first available method.
     $pane_values = !empty($form_state['values']) ? $form_state['values'][$checkout_pane['pane_id']] : array();
 
-    // First check for a line item.
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // First check for a shipping service selection in the pane values.
+    if (!empty($pane_values['shipping_service']) && !empty($options[$pane_values['shipping_service']])) {
+      $default_value = $pane_values['shipping_service'];
+    }
+    else {
+      // Then look for one in a line item on the order already.
+      $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-    foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-      if ($line_item_wrapper->type->value() == 'shipping') {
-        $default_value = $line_item_wrapper->commerce_shipping_service->value();
-        break;
+      foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+        if ($line_item_wrapper->type->value() == 'shipping') {
+          $default_value = $line_item_wrapper->commerce_shipping_service->value();
+
+          // If the service details value is empty, see if there are any values
+          // in the line item to merge into the array as defaults.
+          if (empty($pane_values['service_details'])) {
+            $pane_values['service_details'] = $line_item_wrapper->value()->data['service_details'];
+          }
+
+          break;
+        }
       }
     }
 
+    // If we stil don't have a default value, use the first available.
     if (empty($default_value)) {
-      if (!empty($pane_values['shipping_service']) && !empty($options[$pane_values['shipping_service']])) {
-        $default_value = $pane_values['shipping_service'];
-      }
-      else {
-        $default_value = key($options);
-      }
+      $default_value = key($options);
     }
 
     // Set the default value for the shipping method radios.
     $pane_form['shipping_service']['#default_value'] = $default_value;
     $shipping_service = commerce_shipping_service_load($default_value);
 
-    $pane_form['service_details'] = array();
+    $pane_form['service_details'] = array('#type' => 'container');
 
     // If the service specifies a details form callback...
     if ($callback = commerce_shipping_service_callback($shipping_service, 'details_form')) {
       // Look for a form array from the callback.
-      $details_form = $callback($pane_form, $pane_values, $checkout_pane, $shipping_service);
+      $details_form = $callback($pane_form, $pane_values, $checkout_pane, $order, $shipping_service);
 
       // If a details form array was actually returned...
       if (!empty($details_form)) {
         // Add it to the form now.
-        $pane_form['service_details'] = $pane_form;
+        $pane_form['service_details'] += $details_form;
       }
     }
 
@@ -141,9 +150,6 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
  * Checkout pane callback: submit the shipping checkout pane.
  */
 function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
-  // Delete any existing shipping line items from the order.
-  commerce_shipping_delete_shipping_line_items($order, TRUE);
-
   $pane_form = $form[$checkout_pane['pane_id']];
   $pane_values = $form_state['values'][$checkout_pane['pane_id']];
 
@@ -156,6 +162,9 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
   if (!empty($pane_values['shipping_rates'])) {
     $shipping_service = commerce_shipping_service_load($pane_values['shipping_service']);
 
+    // Delete any existing shipping line items from the order.
+    commerce_shipping_delete_shipping_line_items($order, TRUE);
+
     // Extract the unit price from the calculated rate.
     $rate_line_item = $pane_values['shipping_rates'][$pane_values['shipping_service']];
     $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $rate_line_item);
@@ -164,7 +173,7 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
     // Create a new shipping line item with the calculated rate from the form.
     $line_item = commerce_shipping_line_item_new($pane_values['shipping_service'], $unit_price, $order->order_id, $rate_line_item->data, $rate_line_item->type);
 
-    // Add the service details to the line item's data array.
+    // Add the service details to the line item's data array and the order.
     $line_item->data['service_details'] = $pane_values['service_details'];
 
     // Allow the details form submit handler to make any necessary updates to
