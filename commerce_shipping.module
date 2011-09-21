@@ -357,7 +357,22 @@ function commerce_shipping_service_options_list() {
 }
 
 /**
+ * Collects available shipping rates for an order, adding them to the order
+ * object via an unsaved shipping_rates property.
+ *
+ * @param $order
+ *   The order for which rates will be collected.
+ */
+function commerce_shipping_collect_rates($order) {
+  $order->shipping_rates = array();
+  rules_invoke_all('commerce_shipping_collect_rates', $order);
+}
+
+/**
  * Collects available shipping services of the specified method for an order.
+ *
+ * This function is typically called via the Rules action "Collect rates for a
+ * shipping method" attached to a default Rule.
  *
  * @param $method
  *   The machine-name of the shipping method whose services should be collected.
@@ -401,50 +416,15 @@ function commerce_shipping_service_rate_order($service, $order) {
 
   // If the service specifies a rate callback...
   if (!empty($shipping_service['rate_callback'])) {
-    // Call the function and add its return value to the order's rate array.
+    // Get the base rate price for the shipping service.
     $callback = $shipping_service['rate_callback'];
-    $price = $callback($order, $shipping_service);
+    $price = $callback($shipping_service, $order);
 
-    // Ensure the price uses the proper price component type.
-    $price['data'] = commerce_price_component_add(
-      $price,
-      $shipping_service['price_component'],
-      $price,
-      TRUE,
-      FALSE
-    );
+    // Create a calculated shipping line item out of it.
+    $line_item = commerce_shipping_service_rate_calculate($service, $price, $order->order_id);
 
-    $order->shipping_rates[$service] = $price;
+    $order->shipping_rates[$service] = $line_item;
   }
-}
-
-/**
- * Turns an array of shipping rates into a form element options array.
- *
- * @param $order
- *   An order object with a shipping_rates property defined as an array of
- *   shipping rate price arrays keyed by shipping service name.
- *
- * @return
- *   An options array of calculated shipping rates labeled using the display
- *   title of the shipping services.
- */
-function commerce_shipping_service_rate_options($order) {
-  $options = array();
-
-  foreach ($order->shipping_rates as $name => $price) {
-    $line_item = commerce_shipping_service_rate_calculate($name, $price, $order);
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-
-    if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
-      $options[$name] = t('!shipping_service: !price', array(
-        '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
-        '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
-      ));
-    }
-  }
-
-  return $options;
 }
 
 /**
@@ -461,17 +441,54 @@ function commerce_shipping_service_rate_options($order) {
  * @return
  *   The shipping line item with a calculated shipping rate.
  */
-function commerce_shipping_service_rate_calculate($service, $price, $order = NULL) {
+function commerce_shipping_service_rate_calculate($service, $price, $order_id = 0) {
+  $shipping_service = commerce_shipping_service_load($service);
+
   // Create the new line item for the service rate.
-  $line_item = commerce_shipping_line_item_new($service, $price);
+  $line_item = commerce_shipping_line_item_new($service, $price, $order_id);
 
-  if (!empty($order)) {
-    $line_item->order_id = $order->order_id;
-  }
+  // Set the price component of the unit price.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-  rules_invoke_all('commerce_shipping_service_calculate_rate', $line_item);
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+    $line_item_wrapper->commerce_unit_price->value(),
+    $shipping_service['price_component'],
+    $line_item_wrapper->commerce_unit_price->value(),
+    TRUE,
+    FALSE
+  );
+
+  rules_invoke_all('commerce_shipping_calculate_rate', $line_item);
 
   return $line_item;
+}
+
+/**
+ * Turns an array of shipping rates into a form element options array.
+ *
+ * @param $order
+ *   An order object with a shipping_rates property defined as an array of
+ *   shipping rate price arrays keyed by shipping service name.
+ *
+ * @return
+ *   An options array of calculated shipping rates labeled using the display
+ *   title of the shipping services.
+ */
+function commerce_shipping_service_rate_options($order) {
+  $options = array();
+
+  foreach ($order->shipping_rates as $name => $line_item) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+    if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
+      $options[$name] = t('!shipping_service: !price', array(
+        '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
+        '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
+      ));
+    }
+  }
+
+  return $options;
 }
 
 /**
@@ -544,8 +561,10 @@ function commerce_shipping_line_item_configuration($line_item_type) {
  * Returns the title of a shipping line item's related shipping service.
  */
 function commerce_shipping_line_item_title($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
   // Try to get the title from the shipping service.
-  if ($title = commerce_shipping_service_get_title($line_item->label, 'display_title')) {
+  if ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
     return $title;
   }
 
@@ -557,12 +576,10 @@ function commerce_shipping_line_item_title($line_item) {
  * Returns the elements necessary to add a shipping line item through the line
  * item manager widget.
  */
-function commerce_shipping_line_item_add_form($form_state) {
+function commerce_shipping_line_item_add_form($form, &$form_state) {
   // Collect the available shipping rates for this order.
   $order = $form_state['commerce_order'];
-
-  $order->shipping_rates = array();
-  rules_invoke_all('commerce_shipping_collect_rates', $order);
+  commerce_shipping_collect_rates($order);
 
   // Store the available rates in the form.
   $form = array();
@@ -582,6 +599,7 @@ function commerce_shipping_line_item_add_form($form_state) {
     '#type' => 'radios',
     '#title' => t('Shipping service'),
     '#options' => $options,
+    '#default_value' => key($options),
   );
 
   $form['custom_rate'] = array(
@@ -645,12 +663,12 @@ function commerce_shipping_line_item_add_form_submit($line_item, $element, &$for
 
   // Use a custom service and rate amount if specified.
   if ($element['actions']['shipping_service']['#value'] == 'manual') {
-    $service = $element['actions']['custom_rate']['shipping_service'];
+    $service = $element['actions']['custom_rate']['shipping_service']['#value'];
     $shipping_service = commerce_shipping_service_load($service);
 
     // Build the custom unit price array.
     $unit_price = array(
-      'amount' => commerce_currency_decimal_to_amount($element['actions']['custom_rate']['amount']['#value'], $element['actions']['custom_currency_code']['#value']),
+      'amount' => commerce_currency_decimal_to_amount($element['actions']['custom_rate']['amount']['#value'], $element['actions']['custom_rate']['currency_code']['#value']),
       'currency_code' => $element['actions']['custom_rate']['currency_code']['#value'],
       'data' => array(),
     );
@@ -667,7 +685,9 @@ function commerce_shipping_line_item_add_form_submit($line_item, $element, &$for
   else {
     // Otherwise use the values for the selected calculated service.
     $service = $element['actions']['shipping_service']['#value'];
-    $unit_price = $element['shipping_rates']['#value'][$service];
+
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $element['actions']['shipping_rates']['#value'][$service]);
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
   }
 
   // Populate the line item with the appropriate data.
@@ -722,26 +742,17 @@ function commerce_shipping_line_item_new($service, $unit_price, $order_id = 0, $
  *   A price array used to initialize the value of the line item's unit price.
  */
 function commerce_shipping_line_item_populate($line_item, $service, $unit_price) {
-  // Use the field and the label to store the name of the shipping service.
+  // Use the label to store the display title of the shipping service.
   $line_item->line_item_label = commerce_shipping_service_get_title($service, 'display_title');
-  $line_item->commerce_shipping_service = $service;
   $line_item->quantity = 1;
 
   // Store the full shipping status object in the data array.
   $line_item->data['shipping_service'] = commerce_shipping_service_load($service);
 
-  // Set the unit price.
+  // Set the service textfield and unit price.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $line_item_wrapper->commerce_shipping_service = $service;
   $line_item_wrapper->commerce_unit_price = $unit_price;
-
-  // Ensure the unit price uses the proper price component type.
-  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-    $line_item_wrapper->commerce_unit_price->value(),
-    $line_item->data['shipping_service']['price_component'],
-    $line_item_wrapper->commerce_unit_price->value(),
-    TRUE,
-    FALSE
-  );
 }
 
 /**

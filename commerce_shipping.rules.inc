@@ -12,15 +12,18 @@
  * Implements hook_rules_event_info().
  */
 function commerce_shipping_rules_event_info() {
-  // So that we can use the entity_rules_events_variables() helper function.
-  module_load_include('inc', 'entity', 'entity.rules');
-
   $events = array();
 
   $events['commerce_shipping_collect_rates'] = array(
     'label' => t('Collecting shipping rates for an order'),
     'group' => t('Commerce Shipping'),
-    'variables' => entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order'))),
+    'variables' => array(
+      'commerce_order' => array(
+        'label' => t('Order', array(), array('context' => 'a drupal commerce order')),
+        'type' => 'commerce_order',
+        'skip save' => TRUE,
+      ),
+    ),
     'access callback' => 'commerce_order_rules_access',
   );
 
@@ -30,7 +33,13 @@ function commerce_shipping_rules_event_info() {
   $events['commerce_shipping_calculate_rate'] = array(
     'label' => t('Calculating a shipping rate'),
     'group' => t('Commerce Shipping'),
-    'variables' => entity_rules_events_variables('commerce_line_item', t('Shipping line item')),
+    'variables' => array(
+      'commerce_line_item' => array(
+        'label' => t('Shipping line item'),
+        'type' => 'commerce_line_item',
+        'skip save' => TRUE,
+      ),
+    ),
     'access callback' => 'commerce_line_item_rules_access',
   );
 
