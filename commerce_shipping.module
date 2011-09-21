@@ -84,6 +84,7 @@ function commerce_shipping_commerce_customer_profile_type_info() {
     'name' => t('Shipping information'),
     'description' => t('The profile used to collect shipping information on the checkout and order forms.'),
     'help' => '',
+    'checkout_pane_weight' => 0,
   );
 
   return $profile_types;
@@ -96,7 +97,7 @@ function commerce_shipping_commerce_checkout_pane_info() {
   $checkout_panes = array();
 
   $checkout_panes['commerce_shipping'] = array(
-    'title' => t('Shipping'),
+    'title' => t('Shipping service'),
     'base' => 'commerce_shipping_pane',
     'file' => 'includes/commerce_shipping.checkout_pane.inc',
     'page' => 'checkout',
@@ -261,16 +262,26 @@ function commerce_shipping_services() {
         // Initialize shipping service properties if necessary.
         $defaults = array(
           'name' => $name,
+          'base' => $name,
           'display_title' => $shipping_service['title'],
           'description' => '',
           'shipping_method' => '',
-          'rate_callback' => '',
           'rules_component' => TRUE,
-          'price_component' => 'shipping|' . $name,
+          'price_component' => $name,
+          'callbacks' => array(),
           'module' => $module,
         );
 
-        $shipping_services[$name] = array_merge($defaults, $shipping_service);
+        $shipping_service = array_merge($defaults, $shipping_service);
+
+        // Merge in default callbacks.
+        foreach (array('rate', 'details_form', 'details_form_validate', 'details_form_submit') as $callback) {
+          if (!isset($shipping_service['callbacks'][$callback])) {
+            $shipping_service['callbacks'][$callback] = $shipping_service['base'] . '_' . $callback;
+          }
+        }
+
+        $shipping_services[$name] = $shipping_service;
       }
     }
 
@@ -356,6 +367,34 @@ function commerce_shipping_service_options_list() {
   return commerce_shipping_service_get_title();
 }
 
+
+/**
+ * Returns the specified callback for the given shipping service if one exists.
+ *
+ * @param $shipping_service
+ *   The shipping service info array.
+ * @param $callback
+ *   The callback function to return, one of:
+ *   - rate
+ *   - details_form
+ *   - details_form_validate
+ *   - details_form_submit
+ *
+ * @return
+ *   A string containing the name of the callback function or FALSE if it could
+ *   not be found.
+ */
+function commerce_shipping_service_callback($shipping_service, $callback) {
+  // If the specified callback function exists, return it.
+  if (!empty($shipping_service['callbacks'][$callback]) &&
+    function_exists($shipping_service['callbacks'][$callback])) {
+    return $shipping_service['callbacks'][$callback];
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
 /**
  * Collects available shipping rates for an order, adding them to the order
  * object via an unsaved shipping_rates property.
@@ -415,9 +454,8 @@ function commerce_shipping_service_rate_order($service, $order) {
   $shipping_service = commerce_shipping_service_load($service);
 
   // If the service specifies a rate callback...
-  if (!empty($shipping_service['rate_callback'])) {
+  if ($callback = commerce_shipping_service_callback($shipping_service, 'rate')) {
     // Get the base rate price for the shipping service.
-    $callback = $shipping_service['rate_callback'];
     $price = $callback($shipping_service, $order);
 
     // Create a calculated shipping line item out of it.
@@ -762,8 +800,10 @@ function commerce_shipping_line_item_populate($line_item, $service, $unit_price)
  *
  * @param $order
  *  The order object to delete the shipping line items from.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
  */
-function commerce_shipping_delete_shipping_line_items($order) {
+function commerce_shipping_delete_shipping_line_items($order, $skip_save = FALSE) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
   // When deleting more than one line item, metadata_wrapper will give problems
@@ -784,9 +824,46 @@ function commerce_shipping_delete_shipping_line_items($order) {
   // If we found any shipping line items...
   if (!empty($line_item_ids)) {
     // First save the order to update the line item reference field value.
-    $order_wrapper->save();
+    if (!$skip_save) {
+      commerce_order_save($order);
+    }
 
     // Then delete the line items.
     commerce_line_item_delete_multiple($line_item_ids);
   }
+}
+
+/**
+ * Adds a shipping line item to an order.
+ *
+ * @param $line_item
+ *   An unsaved shipping line item that should be added to the order.
+ * @param $order
+ *   The order to add the shipping line item to.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ *
+ * @return
+ *   The saved shipping line item object or FALSE on failure.
+ */
+function commerce_shipping_add_shipping_line_item($line_item, $order, $skip_save = FALSE) {
+  // Do not proceed without a valid order.
+  if (empty($order)) {
+    return FALSE;
+  }
+
+  // Save the incoming line item now so we get its ID.
+  commerce_line_item_save($line_item);
+
+  // Add it to the order's line item reference value.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $order_wrapper->commerce_line_items[] = $line_item;
+
+  // Save the updated order.
+  if (!$skip_save) {
+    commerce_order_save($order);
+  }
+
+  return $line_item;
 }

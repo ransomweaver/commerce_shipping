@@ -28,9 +28,10 @@ function commerce_shipping_method_info() {
  * Each info array must contain values for the following keys:
  * - title: the human readable title of the shipping service
  * - shipping_method: the machine-name of the shipping method the service is for
- * - rate_callback: the name of the function used to generate the price array
- *   for the base rate of the shipping service; rate callbacks are passed two
- *   parameters, the shipping service info array and an order
+ * - callbacks: an array of callback function names with the following keys:
+ *   - rate: the function used to generate the price array for the base rate of
+ *     the shipping service; rate callbacks are passed two parameters,
+ *     ($shipping_service, $order)
  * Values for the following keys are optional:
  * - display_title: the title used for the service on the front end; defaults to
  *   the title
@@ -39,8 +40,23 @@ function commerce_shipping_method_info() {
  *   component should be created to be used for enabling this service on a given
  *   order; defaults to TRUE
  * - price_component: the name of the price component used in the unit price of
- *   shipping line items for the service; defaults to the pattern
- *   'shipping|[shipping-service-name]'
+ *   shipping line items for the service; defaults to the name of the shipping
+ *   service, which is important for data selection in Rules that may need to
+ *   use a variable to specify a price component... accordingly, beware of name
+ *   conflicts in your service names with other price components
+ * - callbacks: additional callback function names may be specified for the
+ *   service with the following keys:
+ *   - details_form: the function used to generate a details form array for the
+ *     shipping service to collect additional information related to the service
+ *     on the checkout / admin forms; details form callbacks are passed four
+ *     parameters, ($pane_form, $pane_values, $checkout_pane, $shipping_service)
+ *   - details_form_validate: the function used to validate input on the service
+ *     details form; details form validate callbacks are passed five parameters,
+ *     $pane_form['service_details'], $pane_values['service_details'], $shipping_service, $order, array($checkout_pane['pane_id'], 'service_details')
+ *   - details_form_submit: the function used to perform any additional
+ *     processing required on a shipping line item in light of the details form;
+ *     details form submit callbacks are passed three parameters,
+ *     ($pane_form['service_details'], $pane_values['service_details'], $line_item)
  * When loaded, a shipping service info array will also contain a module key
  * whose value is the name of the module that defined the service.
  */
