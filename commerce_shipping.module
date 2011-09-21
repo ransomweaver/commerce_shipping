@@ -399,7 +399,7 @@ function commerce_shipping_method_collect_rates($method, $order) {
 
   // Allow modules handling shipping service calculation on their own to return
   // services for this method, too.
-  module_invoke_all('commerce_shipping_method_collect_rates', $shipping_method, $order);
+  module_invoke_all('commerce_shipping_method_collect_rates', $method, $order);
 }
 
 /**
@@ -422,8 +422,12 @@ function commerce_shipping_service_rate_order($service, $order) {
 
     // Create a calculated shipping line item out of it.
     $line_item = commerce_shipping_service_rate_calculate($service, $price, $order->order_id);
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-    $order->shipping_rates[$service] = $line_item;
+    // Add the rate to the order as long as it doesn't have a NULL price amount.
+    if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
+      $order->shipping_rates[$service] = $line_item;
+    }
   }
 }
 
@@ -480,12 +484,10 @@ function commerce_shipping_service_rate_options($order) {
   foreach ($order->shipping_rates as $name => $line_item) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-    if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
-      $options[$name] = t('!shipping_service: !price', array(
-        '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
-        '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
-      ));
-    }
+    $options[$name] = t('!shipping_service: !price', array(
+      '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
+      '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
+    ));
   }
 
   return $options;
