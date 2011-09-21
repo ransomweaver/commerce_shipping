@@ -121,7 +121,7 @@ function commerce_shipping_commerce_price_component_type_info() {
 
   // Add a price component type for each shipping service that specifies it.
   foreach (commerce_shipping_services() as $name => $shipping_service) {
-    if ($shipping_service['price_component']) {
+    if ($shipping_service['price_component'] && empty($components[$shipping_service['price_component']])) {
       $components[$shipping_service['price_component']] = array(
         'title' => $shipping_service['title'],
         'display_title' => $shipping_service['display_title'],
@@ -603,8 +603,12 @@ function commerce_shipping_line_item_configuration($line_item_type) {
 function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-  // Try to get the title from the shipping service.
-  if ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
+  // First try to get the title from the line item's data array.
+  if (!empty($line_item->data['shipping_service']['display_title'])) {
+    return $line_item->data['shipping_service']['display_title'];
+  }
+  // Then try to get the title from the shipping service.
+  elseif ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
     return $title;
   }
 

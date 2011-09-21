@@ -38,7 +38,7 @@ function commerce_shipping_default_rules_configuration() {
     // Create a new rule.
     $rule = rules_reaction_rule();
 
-    $rule->label = t('Collect @title rates', array('@title' => $shipping_method['title']));
+    $rule->label = t('Collect rates: @title', array('@title' => $shipping_method['title']));
     $rule->active = $shipping_method['active'];
 
     // Add the action to invoke every shipping service's component matching this

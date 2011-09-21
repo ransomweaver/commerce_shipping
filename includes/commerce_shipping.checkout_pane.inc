@@ -42,6 +42,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     // Find the default shipping method using either the pre-selected value
     // stored as a line item on the order or the first available method.
     $pane_values = !empty($form_state['values']) ? $form_state['values'][$checkout_pane['pane_id']] : array();
+    $pane_values['service_details'] = array();
 
     // First check for a shipping service selection in the pane values.
     if (!empty($pane_values['shipping_service']) && !empty($options[$pane_values['shipping_service']])) {
@@ -52,7 +53,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
       foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-        if ($line_item_wrapper->type->value() == 'shipping') {
+        if ($line_item_wrapper->type->value() == 'shipping' && !empty($options[$line_item_wrapper->commerce_shipping_service->value()])) {
           $default_value = $line_item_wrapper->commerce_shipping_service->value();
 
           // If the service details value is empty, see if there are any values
