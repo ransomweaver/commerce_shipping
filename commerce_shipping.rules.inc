@@ -89,7 +89,7 @@ function commerce_shipping_rules_action_info() {
   }
 
   $actions['commerce_shipping_delete_shipping_line_items'] = array(
-    'label' => t("Delete an order's shipping line items"),
+    'label' => t('Delete all shipping line items from an order'),
     'parameter' => array(
       'commerce_order' => array(
         'type' => 'commerce_order',

@@ -12,6 +12,33 @@
 function commerce_shipping_default_rules_configuration() {
   $rules = array();
 
+  // When an order's status is updating to "Shopping cart" from any other status,
+  // its shipping line items will be deleted. This captures any cart contents
+  // change via Add to Cart forms / the Shopping cart Views form. It also happens
+  // when the customer cancels out of the checkout form.
+  $rule = rules_reaction_rule();
+
+  $rule->label = t('Delete shipping line items on shopping cart updates');
+  $rule->active = TRUE;
+
+  $rule
+    ->event('commerce_order_update')
+    ->condition(rules_condition('data_is', array(
+      'data:select' => 'commerce-order-unchanged:status',
+      'op' => '==',
+      'value' => 'cart',
+    ))->negate())
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:status',
+      'op' => '==',
+      'value' => 'cart',
+    ))
+    ->action('commerce_shipping_delete_shipping_line_items', array(
+      'commerce_order:select' => 'commerce-order',
+    ));
+
+  $rules['commerce_shipping_cart_update_delete'] = $rule;
+
   // Loop over every shipping service looking for services requiring a default
   // component.
   foreach (commerce_shipping_services() as $name => $shipping_service) {
