@@ -1,12 +1,9 @@
 name = Shipping
 description = Implement core shipping features for Drupal commerce.
-package = Commerce (contrib)
+package = Commerce (shipping)
 dependencies[] = commerce
 dependencies[] = commerce_line_item
 dependencies[] = commerce_payment
 dependencies[] = list
 dependencies[] = rules
 core = 7.x
-
-; Views include
-files[] = includes/views/commerce_shipping.views.inc

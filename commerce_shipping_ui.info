@@ -1,15 +1,8 @@
 name = Shipping UI
-description = Implement core shipping features for Drupal commerce.
+description = Provides an interface for viewing and managing shipping methods and services.
 package = Commerce (shipping)
+dependencies[] = rules
 dependencies[] = commerce
-dependencies[] = commerce_order
-dependencies[] = commerce_order_ui
 dependencies[] = commerce_shipping
 core = 7.x
-configure = admin/commerce/config/shipping-methods
-
-; Base module files
-files[] = commerce_shipping_ui.module
-
-; Views include
-files[] = includes/views/commerce_shipping_ui.views_default.inc
+configure = admin/commerce/config/shipping

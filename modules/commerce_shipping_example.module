@@ -28,6 +28,7 @@ function commerce_shipping_example_commerce_shipping_service_info() {
 
   $shipping_services['example_shipping_service'] = array(
     'title' => t('Example shipping service'),
+    'description' => t('A $20 flat rate service with express delivery available for an additional $15.'),
     'display_title' => t('Shipping'),
     'shipping_method' => 'example_shipping_method',
     'price_component' => 'shipping',
