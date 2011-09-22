@@ -102,3 +102,25 @@ function theme_shipping_service_admin_overview($variables) {
 
   return $output;
 }
+
+/**
+ * Builds the shipping rate calculation Rules Overview page.
+ */
+function commerce_shipping_ui_rate_calculation_rules() {
+  RulesPluginUI::$basePath = 'admin/commerce/config/shipping/calculation-rules';
+  $options = array('show plugin' => FALSE);
+
+  $content['enabled']['title']['#markup'] = '<h3>' . t('Enabled shipping rate calculation rules') . '</h3>';
+
+  $conditions = array('event' => 'commerce_shipping_calculate_rate', 'plugin' => 'reaction rule', 'active' => TRUE);
+  $content['enabled']['rules'] = RulesPluginUI::overviewTable($conditions, $options);
+  $content['enabled']['rules']['#empty'] = t('There are no active shipping rate calculation rules.');
+
+  $content['disabled']['title']['#markup'] = '<h3>' . t('Disabled shipping rate calculation rules') . '</h3>';
+
+  $conditions['active'] = FALSE;
+  $content['disabled']['rules'] = RulesPluginUI::overviewTable($conditions, $options);
+  $content['disabled']['rules']['#empty'] = t('There are no disabled shipping rate calculation rules.');
+
+  return $content;
+}
