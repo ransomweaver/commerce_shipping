@@ -100,7 +100,7 @@ function commerce_shipping_ui_menu() {
       'file' => 'includes/commerce_shipping_ui.admin.inc',
     );
 
-    foreach (commerce_shipping_services($name) as $service_name => $shipping_service) {
+    foreach (commerce_shipping_services($method_name) as $service_name => $shipping_service) {
       // Convert underscores to hyphens for the menu item argument.
       $service_name_arg = $method_name_arg . '-' . strtr($service_name, '_', '-');
 
