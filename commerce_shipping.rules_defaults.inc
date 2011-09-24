@@ -23,16 +23,16 @@ function commerce_shipping_default_rules_configuration() {
 
   $rule
     ->event('commerce_order_update')
-    ->condition(rules_condition('data_is', array(
-      'data:select' => 'commerce-order-unchanged:status',
-      'op' => '==',
-      'value' => 'cart',
-    ))->negate())
     ->condition('data_is', array(
       'data:select' => 'commerce-order:status',
       'op' => '==',
       'value' => 'cart',
     ))
+    ->condition(rules_condition('data_is', array(
+      'data:select' => 'commerce-order-unchanged:status',
+      'op' => '==',
+      'value' => 'cart',
+    ))->negate())
     ->action('commerce_shipping_delete_shipping_line_items', array(
       'commerce_order:select' => 'commerce-order',
     ));
