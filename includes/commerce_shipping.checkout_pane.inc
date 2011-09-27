@@ -7,6 +7,21 @@
 
 
 /**
+ * Checkout pane callback: returns the shipping service pane's settings form.
+ */
+function commerce_shipping_pane_settings_form($checkout_pane) {
+  $form = array();
+
+  $form['commerce_shipping_pane_require_service'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Require a shipping service at all times, preventing checkout if none are available.'),
+    '#default_value' => variable_get('commerce_shipping_pane_require_service', FALSE),
+  );
+
+  return $form;
+}
+
+/**
  * Checkout pane callback: builds a shipping quote selection form.
  */
 function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
@@ -93,6 +108,16 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     $pane_form['service_details']['#prefix'] = '<div id="commerce-shipping-service-details">';
     $pane_form['service_details']['#suffix'] = '</div>';
   }
+  elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
+    $pane_form['message'] = array(
+      '#markup' => '<div>' . t('Unfortunately we could not calculate any valid shipping rates for your order, and we require shipping service selection to complete checkout.') . '<br /><strong>' . t('Please contact us to resolve any issues with your order.') . '</strong></div>',
+    );
+
+    $pane_form['shipping_rates'] = array(
+      '#type' => 'value',
+      '#value' => FALSE,
+    );
+  }
 
   return $pane_form;
 }
@@ -141,6 +166,11 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
       // default to TRUE.
       return $result === FALSE ? FALSE : TRUE;
     }
+  }
+  elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
+    // But fail validation if no rates were returned and we require selection.
+    drupal_set_message(t('You cannot complete checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
+    return FALSE;
   }
 
   // Nothing to validate.
