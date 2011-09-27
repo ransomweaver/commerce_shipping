@@ -169,7 +169,7 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
   }
   elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
     // But fail validation if no rates were returned and we require selection.
-    drupal_set_message(t('You cannot complete checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
+    drupal_set_message(t('You cannot continue checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
     return FALSE;
   }
 
