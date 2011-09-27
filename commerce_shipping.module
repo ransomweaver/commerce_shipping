@@ -101,7 +101,7 @@ function commerce_shipping_commerce_price_component_type_info() {
   // Define a generic shipping price component type.
   $components['shipping'] = array(
     'title' => t('Shipping'),
-    'weight' => -40,
+    'weight' => 20,
   );
 
   // Add a price component type for each shipping service that specifies it.
@@ -111,7 +111,7 @@ function commerce_shipping_commerce_price_component_type_info() {
         'title' => $shipping_service['title'],
         'display_title' => $shipping_service['display_title'],
         'shipping_service' => $name,
-        'weight' => -40,
+        'weight' => 20,
       );
     }
   }
@@ -467,6 +467,52 @@ function commerce_shipping_service_rate_order($service, $order) {
       $order->shipping_rates[$service] = $line_item;
     }
   }
+}
+
+/**
+ * Caches shipping rates for an order.
+ *
+ * @param $method
+ *   The name of the shipping method the rates are being cached for.
+ * @param $order
+ *   The order the rates were calculated for.
+ * @param $rates
+ *   An array of base rate price arrays keyed by shipping service name.
+ */
+function commerce_shipping_rates_cache_set($method, $order, $rates) {
+  cache_set($method . ':' . $order->order_id, $rates, 'cache_commerce_shipping_rates', CACHE_TEMPORARY);
+}
+
+/**
+ * Retrieves cached shipping rates for an order.
+ *
+ * @param $method
+ *   The name of the shipping method the rates are being cached for.
+ * @param $order
+ *   The order the rates were calculated for.
+ * @param $timeout
+ *   Optional number of seconds after which cached rates should be considered
+ *   invalid.
+ *
+ * @return
+ *   A cached array of base rate price arrays keyed by shipping service name or
+ *   FALSE if no cache existed or the cache is invalid based on the timeout
+ *   parameter if specified.
+ */
+function commerce_shipping_rates_cache_get($method, $order, $timeout = NULL) {
+  $cache = cache_get($method . ':' . $order->order_id, 'cache_commerce_shipping_rates');
+
+  // If no data was retrieved, return FALSE.
+  if (empty($cache)) {
+    return FALSE;
+  }
+
+  // If a timeout value was specified...
+  if (!is_null($timeout) && $cache->created <= REQUEST_TIME - $timeout) {
+    return FALSE;
+  }
+
+  return $cache->data;
 }
 
 /**

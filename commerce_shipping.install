@@ -4,6 +4,20 @@
  * @file Contains updade hooks for the commerce_shipping module.
  */
 
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_shipping_schema() {
+  $schema = array();
+
+  $schema['cache_commerce_shipping_rates'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_commerce_shipping_rates']['description'] = 'Cache table for the temporary storage of base calculated shipping rates for orders.';
+  $schema['cache_commerce_shipping_rates']['fields']['cid']['description'] = 'Primary Key: Order ID and shipping method the rates are for.';
+
+  return $schema;
+}
+
 /**
  * Implements hook_uninstall().
  */
