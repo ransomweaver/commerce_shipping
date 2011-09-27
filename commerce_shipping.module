@@ -76,6 +76,20 @@ function commerce_shipping_commerce_customer_profile_type_info() {
 }
 
 /**
+ * Implements hook_commerce_checkout_page_info().
+ */
+function commerce_shipping_commerce_checkout_page_info() {
+  $checkout_pages = array();
+
+  $checkout_pages['shipping'] = array(
+    'title' => t('Shipping'),
+    'weight' => 5,
+  );
+
+  return $checkout_pages;
+}
+
+/**
  * Implements hook_commerce_checkout_pane_info().
  */
 function commerce_shipping_commerce_checkout_pane_info() {
