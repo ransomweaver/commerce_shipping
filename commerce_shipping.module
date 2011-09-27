@@ -405,6 +405,26 @@ function commerce_shipping_service_callback($shipping_service, $callback) {
 function commerce_shipping_collect_rates($order) {
   $order->shipping_rates = array();
   rules_invoke_all('commerce_shipping_collect_rates', $order);
+
+  // Sort rates by the weight value of their line items. This value is derived
+  // from the related shipping service's rate but may be overridden via
+  // hook_commerce_shipping_method_collect_rates().
+  uasort($order->shipping_rates, 'commerce_shipping_sort_rates');
+}
+
+/**
+ * Sorts shipping rates based on the weight property added to shipping line
+ * items in an order's data array.
+ */
+function commerce_shipping_sort_rates($a, $b) {
+  $a_weight = isset($a->weight) ? $a->weight : 0;
+  $b_weight = isset($b->weight) ? $b->weight : 0;
+
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+
+  return ($a_weight < $b_weight) ? -1 : 1;
 }
 
 /**
@@ -464,6 +484,9 @@ function commerce_shipping_service_rate_order($service, $order) {
 
     // Add the rate to the order as long as it doesn't have a NULL price amount.
     if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
+      // Include a weight property on the line item object from the shipping
+      // service for sorting rates.
+      $line_item->weight = empty($shipping_service['weight']) ? 0 : $shipping_service['weight'];
       $order->shipping_rates[$service] = $line_item;
     }
   }
@@ -491,15 +514,16 @@ function commerce_shipping_rates_cache_set($method, $order, $rates) {
  * @param $order
  *   The order the rates were calculated for.
  * @param $timeout
- *   Optional number of seconds after which cached rates should be considered
- *   invalid.
+ *   Number of seconds after which cached rates should be considered invalid.
+ *   Defaults to 0, meaning cached rates are only good for the current page
+ *   request.
  *
  * @return
  *   A cached array of base rate price arrays keyed by shipping service name or
  *   FALSE if no cache existed or the cache is invalid based on the timeout
  *   parameter if specified.
  */
-function commerce_shipping_rates_cache_get($method, $order, $timeout = NULL) {
+function commerce_shipping_rates_cache_get($method, $order, $timeout = 0) {
   $cache = cache_get($method . ':' . $order->order_id, 'cache_commerce_shipping_rates');
 
   // If no data was retrieved, return FALSE.
@@ -508,11 +532,18 @@ function commerce_shipping_rates_cache_get($method, $order, $timeout = NULL) {
   }
 
   // If a timeout value was specified...
-  if (!is_null($timeout) && $cache->created <= REQUEST_TIME - $timeout) {
+  if ($cache->created < REQUEST_TIME - $timeout) {
     return FALSE;
   }
 
   return $cache->data;
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function commerce_shipping_flush_caches() {
+  return array('cache_commerce_shipping_rates');
 }
 
 /**
