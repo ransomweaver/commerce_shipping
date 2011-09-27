@@ -503,7 +503,7 @@ function commerce_shipping_service_rate_order($service, $order) {
  *   An array of base rate price arrays keyed by shipping service name.
  */
 function commerce_shipping_rates_cache_set($method, $order, $rates) {
-  cache_set($method . ':' . $order->order_id, $rates, 'cache_commerce_shipping_rates', CACHE_TEMPORARY);
+  cache_set($order->order_id . ':' . $method, $rates, 'cache_commerce_shipping_rates', CACHE_TEMPORARY);
 }
 
 /**
@@ -524,7 +524,7 @@ function commerce_shipping_rates_cache_set($method, $order, $rates) {
  *   parameter if specified.
  */
 function commerce_shipping_rates_cache_get($method, $order, $timeout = 0) {
-  $cache = cache_get($method . ':' . $order->order_id, 'cache_commerce_shipping_rates');
+  $cache = cache_get($order->order_id . ':' . $method, 'cache_commerce_shipping_rates');
 
   // If no data was retrieved, return FALSE.
   if (empty($cache)) {
@@ -537,6 +537,13 @@ function commerce_shipping_rates_cache_get($method, $order, $timeout = 0) {
   }
 
   return $cache->data;
+}
+
+/**
+ * Clears the shipping rates cache for the specified order.
+ */
+function commerce_shipping_rates_cache_clear($order) {
+  cache_clear_all($order->order_id . ':', 'cache_commerce_shipping_rates', TRUE);
 }
 
 /**
@@ -912,6 +919,17 @@ function commerce_shipping_delete_shipping_line_items($order, $skip_save = FALSE
     // Then delete the line items.
     commerce_line_item_delete_multiple($line_item_ids);
   }
+}
+
+/**
+ * Implements hook_commerce_order_update().
+ *
+ * When an order is updated, we have no way of knowing if new information on the
+ * order demands a recalculation of shipping rates. To be safe, we simply clear
+ * the cached rates for an order any time that order is updated.
+ */
+function commerce_shipping_commerce_order_update($order) {
+  commerce_shipping_rates_cache_clear($order);
 }
 
 /**
