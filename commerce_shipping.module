@@ -296,11 +296,15 @@ function commerce_shipping_services($method = NULL) {
 
   // Filter out services that don't match the specified shipping method filter.
   if (!empty($method)) {
-    foreach ($shipping_services as $name => $shipping_service) {
+    $filtered_services = $shipping_services;
+
+    foreach ($filtered_services as $name => $shipping_service) {
       if ($shipping_service['shipping_method'] != $method) {
-        unset($shipping_services[$name]);
+        unset($filtered_services[$name]);
       }
     }
+
+    return $filtered_services;
   }
 
   return $shipping_services;
