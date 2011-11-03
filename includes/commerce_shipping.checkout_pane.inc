@@ -110,7 +110,7 @@ function commerce_shipping_pane_checkout_form_details_refresh($form, $form_state
  */
 function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $pane_form = $form[$checkout_pane['pane_id']];
-  $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  $pane_values = &$form_state['values'][$checkout_pane['pane_id']];
   $class = $pane_form['commerce_shipping_plugin']['#value'];
   if (!isset($pane_values['shipping_details'])) {
     $pane_values['shipping_details'] = array();
