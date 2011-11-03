@@ -99,7 +99,7 @@ function commerce_shipping_commerce_checkout_pane_info() {
     'title' => t('Shipping service'),
     'base' => 'commerce_shipping_pane',
     'file' => 'includes/commerce_shipping.checkout_pane.inc',
-    'page' => 'checkout',
+    'page' => 'shipping',
     'weight' => 2,
   );
 

@@ -133,44 +133,49 @@ function commerce_shipping_pane_service_details_refresh($form, $form_state) {
  * Checkout pane callback: validate the shipping service selection and details.
  */
 function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
-  $pane_form = $form[$checkout_pane['pane_id']];
-  $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  $pane_id = $checkout_pane['pane_id'];
 
-  // Initialize the extra details if necessary.
-  if (empty($pane_values['service_details'])) {
-    $pane_values['service_details'] = array();
-  }
+  // Only attempt validation if we actually had shipping services on the form.
+  if (!empty($form[$pane_id]) && !empty($form_state['values'][$pane_id])) {
+    $pane_form = $form[$pane_id];
+    $pane_values = $form_state['values'][$pane_id];
 
-  // Only attempt validation if there were shipping services available.
-  if ($pane_values['shipping_rates']) {
-    // If the selected shipping service was changed...
-    if ($pane_values['shipping_service'] != $pane_form['shipping_service']['#default_value']) {
-      // And the newly selected service has a valid details form callback...
-      if ($shipping_service = commerce_shipping_service_load($pane_values['shipping_service'])) {
-        if (commerce_shipping_service_callback($shipping_service, 'details_form')) {
-          // Fail validation so the form is rebuilt to include the shipping
-          // service specific form elements.
-          return FALSE;
+    // Initialize the extra details if necessary.
+    if (empty($pane_values['service_details'])) {
+      $pane_values['service_details'] = array();
+    }
+
+    // Only attempt validation if there were shipping services available.
+    if ($pane_values['shipping_rates']) {
+      // If the selected shipping service was changed...
+      if ($pane_values['shipping_service'] != $pane_form['shipping_service']['#default_value']) {
+        // And the newly selected service has a valid details form callback...
+        if ($shipping_service = commerce_shipping_service_load($pane_values['shipping_service'])) {
+          if (commerce_shipping_service_callback($shipping_service, 'details_form')) {
+            // Fail validation so the form is rebuilt to include the shipping
+            // service specific form elements.
+            return FALSE;
+          }
         }
       }
+
+      // Allow the shipping service to validate the service details.
+      $shipping_service = commerce_shipping_service_load($pane_values['shipping_service']);
+
+      if ($callback = commerce_shipping_service_callback($shipping_service, 'details_form_validate')) {
+        $result = $callback($pane_form['service_details'], $pane_values['service_details'], $shipping_service, $order, array($checkout_pane['pane_id'], 'service_details'));
+
+        // To prevent payment method validation routines from having to return TRUE
+        // explicitly, only return FALSE if it was specifically returned.  Otherwise
+        // default to TRUE.
+        return $result === FALSE ? FALSE : TRUE;
+      }
     }
-
-    // Allow the shipping service to validate the service details.
-    $shipping_service = commerce_shipping_service_load($pane_values['shipping_service']);
-
-    if ($callback = commerce_shipping_service_callback($shipping_service, 'details_form_validate')) {
-      $result = $callback($pane_form['service_details'], $pane_values['service_details'], $shipping_service, $order, array($checkout_pane['pane_id'], 'service_details'));
-
-      // To prevent payment method validation routines from having to return TRUE
-      // explicitly, only return FALSE if it was specifically returned.  Otherwise
-      // default to TRUE.
-      return $result === FALSE ? FALSE : TRUE;
+    elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
+      // But fail validation if no rates were returned and we require selection.
+      drupal_set_message(t('You cannot continue checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
+      return FALSE;
     }
-  }
-  elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
-    // But fail validation if no rates were returned and we require selection.
-    drupal_set_message(t('You cannot continue checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
-    return FALSE;
   }
 
   // Nothing to validate.
@@ -181,39 +186,44 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
  * Checkout pane callback: submit the shipping checkout pane.
  */
 function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
-  $pane_form = $form[$checkout_pane['pane_id']];
-  $pane_values = $form_state['values'][$checkout_pane['pane_id']];
+  $pane_id = $checkout_pane['pane_id'];
 
-  // Initialize the extra details if necessary.
-  if (empty($pane_values['service_details'])) {
-    $pane_values['service_details'] = array();
-  }
+  // Only attempt validation if we actually had payment methods on the form.
+  if (!empty($form[$pane_id]) && !empty($form_state['values'][$pane_id])) {
+    $pane_form = $form[$pane_id];
+    $pane_values = $form_state['values'][$pane_id];
 
-  // Only submit if there were shipping services available.
-  if (!empty($pane_values['shipping_rates'])) {
-    $shipping_service = commerce_shipping_service_load($pane_values['shipping_service']);
-
-    // Delete any existing shipping line items from the order.
-    commerce_shipping_delete_shipping_line_items($order, TRUE);
-
-    // Extract the unit price from the calculated rate.
-    $rate_line_item = $pane_values['shipping_rates'][$pane_values['shipping_service']];
-    $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $rate_line_item);
-    $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
-
-    // Create a new shipping line item with the calculated rate from the form.
-    $line_item = commerce_shipping_line_item_new($pane_values['shipping_service'], $unit_price, $order->order_id, $rate_line_item->data, $rate_line_item->type);
-
-    // Add the service details to the line item's data array and the order.
-    $line_item->data['service_details'] = $pane_values['service_details'];
-
-    // Allow the details form submit handler to make any necessary updates to
-    // the line item before adding it to the order.
-    if ($callback = commerce_shipping_service_callback($shipping_service, 'details_form_submit')) {
-      $callback($pane_form['service_details'], $pane_values['service_details'], $line_item);
+    // Initialize the extra details if necessary.
+    if (empty($pane_values['service_details'])) {
+      $pane_values['service_details'] = array();
     }
 
-    // Save and add the line item to the order.
-    commerce_shipping_add_shipping_line_item($line_item, $order, TRUE);
+    // Only submit if there were shipping services available.
+    if (!empty($pane_values['shipping_rates'])) {
+      $shipping_service = commerce_shipping_service_load($pane_values['shipping_service']);
+
+      // Delete any existing shipping line items from the order.
+      commerce_shipping_delete_shipping_line_items($order, TRUE);
+
+      // Extract the unit price from the calculated rate.
+      $rate_line_item = $pane_values['shipping_rates'][$pane_values['shipping_service']];
+      $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $rate_line_item);
+      $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
+
+      // Create a new shipping line item with the calculated rate from the form.
+      $line_item = commerce_shipping_line_item_new($pane_values['shipping_service'], $unit_price, $order->order_id, $rate_line_item->data, $rate_line_item->type);
+
+      // Add the service details to the line item's data array and the order.
+      $line_item->data['service_details'] = $pane_values['service_details'];
+
+      // Allow the details form submit handler to make any necessary updates to
+      // the line item before adding it to the order.
+      if ($callback = commerce_shipping_service_callback($shipping_service, 'details_form_submit')) {
+        $callback($pane_form['service_details'], $pane_values['service_details'], $line_item);
+      }
+
+      // Save and add the line item to the order.
+      commerce_shipping_add_shipping_line_item($line_item, $order, TRUE);
+    }
   }
 }
