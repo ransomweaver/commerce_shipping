@@ -262,7 +262,7 @@ function commerce_shipping_services($method = NULL) {
     $weight = 0;
 
     foreach (module_implements('commerce_shipping_service_info') as $module) {
-      foreach (module_invoke($module, 'commerce_shipping_service_info') as $name => $shipping_service) {
+      foreach ((array) module_invoke($module, 'commerce_shipping_service_info') as $name => $shipping_service) {
         // Initialize shipping service properties if necessary.
         $defaults = array(
           'name' => $name,
@@ -533,16 +533,18 @@ function commerce_shipping_service_rate_calculate($service, $price, $order_id = 
   // Create the new line item for the service rate.
   $line_item = commerce_shipping_line_item_new($service, $price, $order_id);
 
-  // Set the price component of the unit price.
+  // Set the price component of the unit price if it hasn't already been done.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-    $line_item_wrapper->commerce_unit_price->value(),
-    $shipping_service['price_component'],
-    $line_item_wrapper->commerce_unit_price->value(),
-    TRUE,
-    FALSE
-  );
+  if (empty($line_item_wrapper->commerce_unit_price->data)) {
+    $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+      $line_item_wrapper->commerce_unit_price->value(),
+      $shipping_service['price_component'],
+      $line_item_wrapper->commerce_unit_price->value(),
+      TRUE,
+      FALSE
+    );
+  }
 
   rules_invoke_all('commerce_shipping_calculate_rate', $line_item);
 

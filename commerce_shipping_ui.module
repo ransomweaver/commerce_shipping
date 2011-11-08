@@ -195,7 +195,7 @@ function commerce_shipping_ui_theme() {
  * Implements hook_help().
  */
 function commerce_shipping_ui_help($path, $arg) {
-  if (strpos($path, 'admin/commerce/config/shipping/services') === 0) {
+  if (strpos($path, 'admin/commerce/config/shipping/services') === 0 && empty($arg[6])) {
     return '<p>' . t('Shipping services represent the different types of shipping made available by a shipping method. Each shipping method may have a different way of defining shipping services. Default Rules components are defined for any shipping service specifying it and can be accessed using the appropriate operations link below.') . '</p>';
   }
 
