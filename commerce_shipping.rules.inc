@@ -47,6 +47,70 @@ function commerce_shipping_rules_event_info() {
 }
 
 /**
+ * Implements hook_rules_condition_info().
+ */
+function commerce_shipping_rules_condition_info() {
+  $conditions = array();
+
+  $conditions['commerce_shipping_compare_shipping_service'] = array(
+    'label' => t('Shipping line item exists'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'description' => t('The order whose line items should be checked for an existing shipping line item.'),
+      ),
+      'service' => array(
+        'type' => 'text',
+        'label' => t('Shipping service'),
+        'options list' => 'commerce_shipping_service_rules_options_list',
+        'description' => t('The actual address component you want to compare. Common names of address components are given in parentheses.'),
+      ),
+    ),
+    'group' => t('Commerce Shipping'),
+    'callbacks' => array(
+      'execute' => 'commerce_shipping_rules_line_item_exists',
+    ),
+  );
+
+  return $conditions;
+}
+
+/**
+ * Returns a list of shipping services available for existence conditions.
+ */
+function commerce_shipping_service_rules_options_list() {
+  // Return an options array with an "Any" option prefixed to the normal list of
+  // shipping service options.
+  return array_merge(array('-any-' => t('Any')), commerce_shipping_service_options_list());
+}
+
+/**
+ * Checks an order for the existence of a shipping line item.
+ *
+ * @param $order
+ *   The order to check for a shipping line item.
+ * @param $service
+ *   The machine-name of a particular shipping service to search for; if '-any-'
+ *   the condition returns TRUE for any found shipping line item.
+ */
+function commerce_shipping_rules_line_item_exists($order, $service) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Loop over all the line items on the order.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // If the current line item is a shipping line item and the condition either
+    // doesn't care about the service or the service name matches, return TRUE.
+    if ($line_item_wrapper->type->value() == 'shipping' &&
+      ($service == '-any-' || $line_item_wrapper->commerce_shipping_service->value() == $service)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
  * Implements hook_rules_action_info().
  */
 function commerce_shipping_rules_action_info() {
