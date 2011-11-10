@@ -535,8 +535,9 @@ function commerce_shipping_service_rate_calculate($service, $price, $order_id = 
 
   // Set the price component of the unit price if it hasn't already been done.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $data = $line_item_wrapper->commerce_unit_price->data->value();
 
-  if (empty($line_item_wrapper->commerce_unit_price->data)) {
+  if (empty($data['components'])) {
     $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
       $line_item_wrapper->commerce_unit_price->value(),
       $shipping_service['price_component'],
