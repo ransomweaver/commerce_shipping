@@ -99,12 +99,12 @@ function commerce_shipping_line_item_configuration() {
   // TODO: Maybe we should create our own field type to reference the shipping
   // method. Since we only want to store its name, list_text should suffice.
 
-  $field = field_info_field('shipping_method');
-  $instance = field_info_instance('commerce_line_item', 'shipping_method', 'shipping');
+  $field = field_info_field('commerce_shipping_method');
+  $instance = field_info_instance('commerce_line_item', 'commerce_shipping_method', 'shipping');
 
   if (empty($field)) {
     $field = array(
-      'field_name' => 'shipping_method',
+      'field_name' => 'commerce_shipping_method',
       'type' => 'list_text',
       'cardinality' => 1,
       'entity_types' => array('commerce_line_item'),
@@ -119,7 +119,7 @@ function commerce_shipping_line_item_configuration() {
 
   if (empty($instance)) {
     $instance = array(
-      'field_name' => 'shipping_method',
+      'field_name' => 'commerce_shipping_method',
       'entity_type' => 'commerce_line_item',
       'bundle' => 'shipping',
       'label' => t('Shipping method'),
@@ -153,11 +153,11 @@ function commerce_shipping_get_shipping_methods_options() {
 
   // Create a fake order that can be used to attach the shipping methods to.
   $order = commerce_order_new();
-  $order->shipping_methods = array();
+  $order->commerce_shipping_methods = array();
 
   rules_invoke_all('commerce_shipping_methods', $order);
 
-  foreach ($order->shipping_methods as $instance_id => $shipping_method) {
+  foreach ($order->commerce_shipping_methods as $instance_id => $shipping_method) {
     $options[$instance_id] = $shipping_method['label'];
   }
 
@@ -171,8 +171,8 @@ function commerce_shipping_line_item_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
   // Try to get the title from the plugin.
-  if ($line_item_wrapper->shipping_method->value()) {
-    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $line_item_wrapper->shipping_method->value());
+  if ($line_item_wrapper->commerce_shipping_method->value()) {
+    $shipping_method = commerce_shipping_plugin_get_plugin('quotes', $line_item_wrapper->commerce_shipping_method->value());
 
     if (!empty($shipping_method)) {
       return $shipping_method['display_title'];
@@ -236,7 +236,7 @@ function commerce_shipping_line_item_add_form_submit(&$line_item, $element, &$fo
 
   // Populate the line item with the shipping data.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $line_item_wrapper->shipping_method = $element['actions']['shipping_method']['#value'];
+  $line_item_wrapper->commerce_shipping_method = $element['actions']['shipping_method']['#value'];
   $line_item_wrapper->commerce_unit_price->amount = commerce_currency_decimal_to_amount($element['actions']['amount']['#value'], $element['actions']['currency_code']['#value']);
   $line_item_wrapper->commerce_unit_price->currency_code = $element['actions']['currency_code']['#value'];
   $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
@@ -334,7 +334,7 @@ function commerce_shipping_line_item_new($plugin) {
   $line_item->quantity = 1;
 
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $line_item_wrapper->shipping_method = $plugin['method_id'];
+  $line_item_wrapper->commerce_shipping_method = $plugin['method_id'];
 
   return $line_item;
 }

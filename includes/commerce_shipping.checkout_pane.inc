@@ -19,12 +19,12 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
   // Invoke the shipping methods event that will populate the order with
   // an array of method IDs for available shipping methods.
-  $order->shipping_methods = array();
+  $order->commerce_shipping_methods = array();
   rules_invoke_all('commerce_shipping_methods', $order);
 
   // Generate an array of shipping method options for the checkout form.
   $options = array();
-  foreach ($order->shipping_methods as $instance_id => $method_info) {
+  foreach ($order->commerce_shipping_methods as $instance_id => $method_info) {
     $plugin = commerce_shipping_method_instance_load($instance_id);
     $class = new $plugin['handler']['class']($plugin['settings'], $order);
     if ($class->form_label()) {
@@ -45,7 +45,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   // Store the shipping methods in the form for validation purposes.
   $pane_form['shipping_methods'] = array(
     '#type' => 'value',
-    '#value' => $order->shipping_methods,
+    '#value' => $order->commerce_shipping_methods,
   );
 
   // If at least one shipping option is available...

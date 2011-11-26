@@ -110,7 +110,7 @@ function commerce_shipping_enable_method($order, $shipping_method, $action_setti
 
   // Set the shipping method to the order along with its settings and context.
 
-  $order->shipping_methods[$instance_id] = array(
+  $order->commerce_shipping_methods[$instance_id] = array(
     'method_id' => $method_id,
     'settings' => $shipping_method['settings'],
     'plugin' => $shipping_method,
