@@ -736,7 +736,7 @@ function commerce_shipping_line_item_add_form($form, &$form_state) {
   // Store the available rates in the form.
   $form = array();
 
-  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_shipping') . '/theme/commerce_shipping.css';
+  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_shipping') . '/theme/commerce_shipping.admin.css';
 
   $form['shipping_rates'] = array(
     '#type' => 'value',
