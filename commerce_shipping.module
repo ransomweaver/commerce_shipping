@@ -575,6 +575,9 @@ function commerce_shipping_service_rate_options($order) {
     ));
   }
 
+  // Allow modules to alter the options array generated for the rates.
+  drupal_alter('commerce_shipping_service_rate_options', $options, $order);
+
   return $options;
 }
 

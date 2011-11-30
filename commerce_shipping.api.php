@@ -1,22 +1,35 @@
 <?php
 
+
 /**
  * Defines a shipping method.
  *
  * @return
- * An associative array of shipping method info arrays keyed by machine-name.
- * Each info array must contain values for the following keys:
- * - title: the human readable title of the shipping method
- * Values for the following keys are optional:
- * - display_title: the title used for the method on the front end; defaults to
- *   the title
- * - description: a basic description of the service
- * - active: boolean indicating whether or not the default Rule for collecting
- *   rates for this shipping method should be defined enabled; defaults to TRUE
- * When loaded, a shipping service info array will also contain a module key
- * whose value is the name of the module that defined the service.
+ *   An associative array of shipping method info arrays keyed by machine-name.
+ *   Each info array must contain values for the following keys:
+ *   - title: the human readable title of the shipping method
+ *   Values for the following keys are optional:
+ *   - display_title: the title used for the method on the front end; defaults to
+ *     the title
+ *   - description: a basic description of the service
+ *   - active: boolean indicating whether or not the default Rule for collecting
+ *     rates for this shipping method should be defined enabled; defaults to TRUE
+ *   When loaded, a shipping service info array will also contain a module key
+ *   whose value is the name of the module that defined the service.
  */
-function commerce_shipping_method_info() {
+function hook_commerce_shipping_method_info() {
+  // No example.
+}
+
+/**
+ * Allows modules to alter the shipping methods defined by other modules.
+ *
+ * @param $shipping_methods
+ *   The array of shipping methods defined by other modules.
+ *
+ * @see hook_commerce_shipping_method_info()
+ */
+function hook_commerce_shipping_method_info_alter(&$shipping_methods) {
   // No example.
 }
 
@@ -60,6 +73,43 @@ function commerce_shipping_method_info() {
  * When loaded, a shipping service info array will also contain a module key
  * whose value is the name of the module that defined the service.
  */
-function commerce_shipping_service_info() {
+function hook_commerce_shipping_service_info() {
+  // No example.
+}
+
+/**
+ * Allows modules to alter the shipping services defined by other modules.
+ *
+ * @param $shipping_services
+ *   The array of shipping services defined by other modules.
+ *
+ * @see hook_commerce_shipping_service_info()
+ */
+function hook_commerce_shipping_service_info_alter(&$shipping_services) {
+  // No example.
+}
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ *
+ * The options values for the shipping service radio buttons defaults to show
+ * the display title of the shipping service and price. If you need to add
+ * additional information for your shipping services or alter the apperance of
+ * other modules' shipping services, you can use this hook to do so with the
+ * order object available.
+ *
+ * The options array is keyed by the shipping service name and matches the keys
+ * in the $order->shipping_rates array containing shipping line items for rates
+ * calculated for the order.
+ *
+ * @param $options
+ *   The options array used to select a calculated shipping rate.
+ * @param $order
+ *   The order the options array was generated for.
+ *
+ * @see commerce_shipping_service_rate_options()
+ */
+function hook_commerce_shipping_service_rate_options_alter(&$options, $order) {
   // No example.
 }
