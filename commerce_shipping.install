@@ -106,3 +106,15 @@ function commerce_shipping_update_7002(&$sandbox) {
 
   return t('Deleted @deleted shipping and renamed @renamed shipping rules', array('@deleted' => $deleted, '@renamed' => $renamed));
 }
+
+/**
+ * Rename shipping_method field on line item to commerce_shipping_method.
+ */
+function commerce_shipping_update_7003(&$sandbox) {
+  commerce_shipping_line_item_configuration();
+  foreach (commerce_line_item_load_multiple(FALSE, array('type' => 'shipping')) as $line_item) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $line_item_wrapper->commerce_shipping_method = $line_item_wrapper->shipping_method->value();
+  }
+  field_delete_field('shipping_method');
+}
