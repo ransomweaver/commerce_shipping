@@ -118,3 +118,15 @@ function commerce_shipping_update_7003(&$sandbox) {
   }
   field_delete_field('shipping_method');
 }
+
+/**
+ * Install cache table for commerce shipping.
+ * Needed when upgrading from 1.x
+ */
+function commerce_shipping_update_7004($sandbox) {
+  $table = drupal_get_schema_unprocessed('system', 'cache');
+  $table['description'] = 'Cache table for the temporary storage of base calculated shipping rates for orders.';
+  $table['fields']['cid']['description'] = 'Primary Key: Order ID and shipping method the rates are for.';
+  db_create_table('cache_commerce_shipping_rates', $table);
+  return t('Created cache table for commerce shipping');
+}
