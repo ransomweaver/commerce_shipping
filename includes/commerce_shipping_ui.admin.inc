@@ -9,6 +9,8 @@
  * Displays all shipping methods or services defined for a method in a table.
  */
 function commerce_shipping_ui_overview($type, $method = NULL) {
+  drupal_add_css(drupal_get_path('module', 'commerce_shipping_ui') . '/theme/commerce_shipping.admin.css');
+
   // Load the items that will be represented in the overview table.
   if ($type == 'methods') {
     $items = commerce_shipping_methods();
