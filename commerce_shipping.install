@@ -111,12 +111,14 @@ function commerce_shipping_update_7002(&$sandbox) {
  * Rename shipping_method field on line item to commerce_shipping_method.
  */
 function commerce_shipping_update_7003(&$sandbox) {
-  commerce_shipping_line_item_configuration();
-  foreach (commerce_line_item_load_multiple(FALSE, array('type' => 'shipping')) as $line_item) {
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $line_item_wrapper->commerce_shipping_method = $line_item_wrapper->shipping_method->value();
+  if (field_info_instance('commerce_line_item', 'shipping_method', 'shipping')) {
+    commerce_shipping_line_item_configuration(array('type' => 'shipping'));
+    foreach (commerce_line_item_load_multiple(FALSE, array('type' => 'shipping')) as $line_item) {
+      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+      $line_item_wrapper->commerce_shipping_method = $line_item_wrapper->shipping_method->value();
+    }
+    field_delete_field('shipping_method');
   }
-  field_delete_field('shipping_method');
 }
 
 /**
@@ -124,9 +126,12 @@ function commerce_shipping_update_7003(&$sandbox) {
  * Needed when upgrading from 1.x
  */
 function commerce_shipping_update_7004($sandbox) {
-  $table = drupal_get_schema_unprocessed('system', 'cache');
-  $table['description'] = 'Cache table for the temporary storage of base calculated shipping rates for orders.';
-  $table['fields']['cid']['description'] = 'Primary Key: Order ID and shipping method the rates are for.';
-  db_create_table('cache_commerce_shipping_rates', $table);
-  return t('Created cache table for commerce shipping');
+  if (!db_table_exists('cache_commerce_shipping_rates')) {
+    $table = drupal_get_schema_unprocessed('system', 'cache');
+    $table['description'] = 'Cache table for the temporary storage of base calculated shipping rates for orders.';
+    $table['fields']['cid']['description'] = 'Primary Key: Order ID and shipping method the rates are for.';
+    db_create_table('cache_commerce_shipping_rates', $table);
+    return t('Created cache table for commerce shipping');
+  }
+  return t('Skipped creating the cache table, it already exists.');
 }
