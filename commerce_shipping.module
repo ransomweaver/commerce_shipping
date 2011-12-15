@@ -101,6 +101,7 @@ function commerce_shipping_commerce_checkout_pane_info() {
     'file' => 'includes/commerce_shipping.checkout_pane.inc',
     'page' => 'shipping',
     'weight' => 2,
+    'review' => FALSE,
   );
 
   return $checkout_panes;

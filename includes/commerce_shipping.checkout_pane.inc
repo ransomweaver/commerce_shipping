@@ -82,7 +82,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       }
     }
 
-    // If we stil don't have a default value, use the first available.
+    // If we still don't have a default value, use the first available.
     if (empty($default_value)) {
       $default_value = key($options);
     }
@@ -224,6 +224,24 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
 
       // Save and add the line item to the order.
       commerce_shipping_add_shipping_line_item($line_item, $order, TRUE);
+    }
+  }
+}
+
+/**
+ * Checkout pane callback: show the selected shipping service on the review pane.
+ */
+function commerce_shipping_pane_review($form, $form_state, $checkout_pane, $order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Loop over all the line items on the order.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // If the current line item is a shipping line item...
+    if ($line_item_wrapper->type->value() == 'shipping') {
+      // Return its label and formatted total price.
+      $total_price = $line_item_wrapper->commerce_total->value();
+      $rate = commerce_currency_format($total_price['amount'], $total_price['currency_code'], $line_item_wrapper->value());
+      return t('@service: @rate', array('@service' => $line_item_wrapper->line_item_label->value(), '@rate' => $rate));
     }
   }
 }

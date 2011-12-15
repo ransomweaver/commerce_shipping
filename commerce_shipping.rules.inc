@@ -64,7 +64,7 @@ function commerce_shipping_rules_condition_info() {
         'type' => 'text',
         'label' => t('Shipping service'),
         'options list' => 'commerce_shipping_service_rules_options_list',
-        'description' => t('The actual address component you want to compare. Common names of address components are given in parentheses.'),
+        'description' => t('Limit the search amongst the shipping line items to a particular shipping service.'),
       ),
     ),
     'group' => t('Commerce Shipping'),
