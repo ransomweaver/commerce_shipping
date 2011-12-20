@@ -640,12 +640,7 @@ function commerce_shipping_rates_cache_clear($order) {
  * Implements hook_flush_caches().
  */
 function commerce_shipping_flush_caches() {
-  // This table does not yet exist if upgrading from 1.x, so we need to check
-  // for the table before telling Drupal to flush it for now.
-  // @todo Deprecate this check in the future if possible.
-  if (db_table_exists('cache_commerce_shipping_rates')) {
-    return array('cache_commerce_shipping_rates');
-  }
+  return array('cache_commerce_shipping_rates');
 }
 
 /**
