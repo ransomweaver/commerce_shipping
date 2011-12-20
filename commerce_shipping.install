@@ -116,6 +116,7 @@ function commerce_shipping_update_7003(&$sandbox) {
   foreach (commerce_line_item_load_multiple(FALSE, array('type' => 'shipping')) as $line_item) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
     $line_item_wrapper->commerce_shipping_method = $line_item_wrapper->shipping_method->value();
+    $line_item_wrapper->save();
   }
   field_delete_field('shipping_method');
 }
