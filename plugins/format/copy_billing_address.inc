@@ -62,6 +62,9 @@ function commerce_shipping_copy_billing_address_make_unrequired(&$form, $require
     if (!empty($form['#prefix']) && strpos($form['#prefix'], 'copy-billing-address') !== FALSE && !$required) {
       $form['#prefix'] = '<div id="copy-billing-address" class="hidden">';
     }
+    elseif (!empty($form['#prefix']) && strpos($form['#prefix'], 'copy-billing-address') !== FALSE && $required) {
+      $form['#prefix'] = '<div id="copy-billing-address">';
+    }
     foreach ($form as &$child) {
       // Recursion.
       if (is_array($child)) {
