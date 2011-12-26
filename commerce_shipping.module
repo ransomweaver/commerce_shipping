@@ -54,6 +54,9 @@ function commerce_shipping_ctools_plugin_directory($owner, $plugin_type) {
   if ($owner == 'commerce_shipping') {
     return 'plugins/' . $plugin_type;
   }
+  if ($module == 'addressfield') {
+    return 'plugins/' . $plugin;
+  }
 }
 
 /**
