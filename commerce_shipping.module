@@ -79,8 +79,8 @@ function commerce_shipping_commerce_customer_profile_type_info() {
  * Implements hook_ctools_plugin_directory().
  */
 function commerce_shipping_ctools_plugin_directory($owner, $plugin_type) {
-  if ($module == 'addressfield') {
-    return 'plugins/' . $plugin;
+  if ($owner == 'addressfield') {
+    return 'plugins/' . $plugin_type;
   }
 }
 
