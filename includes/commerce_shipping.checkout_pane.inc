@@ -169,13 +169,13 @@ function commerce_shipping_pane_checkout_form_submit($form, &$form_state, $check
             'amount' => $shipping_line_item,
           );
         }
-        elseif (!empty($shipping_line_item['amount'])) {
+        elseif (isset($shipping_line_item['amount'])) {
           $price = array(
             'amount' => $shipping_line_item['amount'],
             'currency_code' => !empty($shipping_line_item['currency_code']) ? $shipping_line_item['currency_code'] : $default_currency_code,
           );
         }
-        elseif (!empty($shipping_line_item['price'])) {
+        elseif (isset($shipping_line_item['price'])) {
             $price = $shipping_line_item['price'];
         }
         if (isset($shipping_line_item['label'])) {
