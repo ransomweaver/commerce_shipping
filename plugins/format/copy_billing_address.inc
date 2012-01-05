@@ -34,8 +34,8 @@ function commerce_shipping_copy_billing_address(&$format, $address, $context = a
     else {
       $format['#prefix'] = '<div id="copy-billing-address">';
       commerce_shipping_copy_billing_address_mark_required($format, TRUE, TRUE);
-      if (!empty($format['#validate'])) {
-        $format['#element_validate'] = array('commerce_shipping_copy_billing_address_validate') + $format['#element_validate'];
+      if (!empty($format['#element_validate'])) {
+        $format['#element_validate'][] = 'commerce_shipping_copy_billing_address_validate';
       }
       else {
         $format['#element_validate'] = array('commerce_shipping_copy_billing_address_validate');
