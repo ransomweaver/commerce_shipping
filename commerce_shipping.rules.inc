@@ -152,6 +152,27 @@ function commerce_shipping_rules_action_info() {
     );
   }
 
+  if (count(commerce_shipping_methods()) > 0) {
+    $actions['commerce_shipping_rate_apply'] = array(
+      'label' => t('Apply shipping rate to an order'),
+      'parameter' => array(
+        'commerce_order' => array(
+          'type' => 'commerce_order',
+          'label' => t('Order'),
+          'save' => TRUE,
+        ),
+        'shipping_service_name' => array(
+          'type' => 'text',
+          'label' => t('Shipping service'),
+          'options list' => 'commerce_shipping_service_options_list',
+          'optional' => TRUE,
+          'description' => t('If left empty, the first available shipping service will be applied.'),
+        ),
+      ),
+      'group' => t('Commerce Shipping'),
+    );
+  }
+
   $actions['commerce_shipping_delete_shipping_line_items'] = array(
     'label' => t('Delete all shipping line items from an order'),
     'parameter' => array(
@@ -164,6 +185,39 @@ function commerce_shipping_rules_action_info() {
   );
 
   return $actions;
+}
+
+/**
+ * Action: Apply a shipping rate to an order.
+ */
+function commerce_shipping_rate_apply($order, $service_name = NULL) {
+
+  if (isset($service_name) && !isset($order->shipping_rates[$service_name])) {
+    // Make the chosen service available to the order.
+    commerce_shipping_service_rate_order($service_name, $order);
+  }
+  elseif (!isset($service_name)) {
+    if (empty($order->shipping_rates)) {
+      // No available rate.
+      return;
+    }
+    $service_name = key($order->shipping_rates);
+  }
+
+
+  // Delete any existing shipping line items from the order.
+  commerce_shipping_delete_shipping_line_items($order, TRUE);
+
+  // Extract the unit price from the calculated rate.
+  $rate_line_item = $order->shipping_rates[$service_name];
+  $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $rate_line_item);
+  $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
+
+  // Create a new shipping line item with the calculated rate from the form.
+  $line_item = commerce_shipping_line_item_new($service_name, $unit_price, $order->order_id, $rate_line_item->data, $rate_line_item->type);
+
+  // Save and add the line item to the order.
+  commerce_shipping_add_shipping_line_item($line_item, $order, TRUE);
 }
 
 /**
