@@ -50,7 +50,7 @@ function commerce_shipping_ui_overview($type, $method = NULL) {
       $empty_text = t('There are no shipping methods enabled.');
     }
     else {
-      $empty_text = t('There are no services defined for the <em>@title</em> shipping method.', array('@title' => commerce_shipping_method_get_title($method)));
+      $empty_text = t('There are no services defined for the %title shipping method.', array('%title' => commerce_shipping_method_get_title($method)));
     }
 
     $rows[] = array(
