@@ -46,7 +46,7 @@ function commerce_shipping_ui_overview($type, $method = NULL) {
   // If no items are defined...
   if (empty($rows)) {
     // Add a standard empty row with a link to add a new item.
-    if ($type == 'methods') {
+    if ($type == 'methods' || $method == NULL) {
       $empty_text = t('There are no shipping methods enabled.');
     }
     else {
