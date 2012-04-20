@@ -32,7 +32,8 @@ function commerce_shipping_copy_billing_address(&$format, $address, $context = a
       );
     }
     else {
-      $format['#prefix'] = '<div id="copy-billing-address">';
+      $format['#prefix'] .= '<div id="copy-billing-address">';
+      $format['#suffix'] .= '</div>';
       commerce_shipping_copy_billing_address_mark_required($format, TRUE, TRUE);
       if (!empty($format['#element_validate'])) {
         $format['#element_validate'][] = 'commerce_shipping_copy_billing_address_validate';
@@ -61,10 +62,7 @@ function commerce_shipping_copy_billing_address_mark_required(&$form, $required 
       }
     }
     if (!empty($form['#prefix']) && strpos($form['#prefix'], 'copy-billing-address') !== FALSE && !$required) {
-      $form['#prefix'] = '<div id="copy-billing-address" class="hidden">';
-    }
-    elseif (!empty($form['#prefix']) && strpos($form['#prefix'], 'copy-billing-address') !== FALSE && $required) {
-      $form['#prefix'] = '<div id="copy-billing-address">';
+      $form['#prefix'] = str_replace('<div id="copy-billing-address">', '<div id="copy-billing-address" class="hidden">', $form['#prefix']);
     }
     foreach ($form as &$child) {
       // Recursion.
