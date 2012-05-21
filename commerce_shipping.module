@@ -1000,6 +1000,11 @@ function commerce_shipping_add_shipping_line_item($line_item, $order, $skip_save
   if (!$skip_save) {
     commerce_order_save($order);
   }
+  // Otherwise, we still need to update the order total to take for account
+  // added shipping line item.
+  else {
+    commerce_order_calculate_total($order);
+  }
 
   return $line_item;
 }
