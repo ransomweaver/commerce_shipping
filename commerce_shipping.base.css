@@ -1,8 +1,0 @@
-/**
- * Base stylesheet for commerce shipping.
- * Required for module to work properly at all circumstances.
- */
-
-#copy-billing-address.hidden {
-  display: none;
-}
