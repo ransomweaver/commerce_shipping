@@ -62,7 +62,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
     // Find the default shipping method using either the preselected value stored
     // in the order / checkout pane or the first available method.
-    $pane_values = !empty($form_state['values']) ? $form_state['values'][$checkout_pane['pane_id']] : array();
+    $pane_values = !empty($form_state['values'][$checkout_pane['pane_id']]) ? $form_state['values'][$checkout_pane['pane_id']] : array();
 
     if (isset($pane_values['shipping_method']) && isset($options[$pane_values['shipping_method']])) {
       $default_value = $pane_values['shipping_method'];
