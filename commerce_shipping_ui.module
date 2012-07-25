@@ -11,20 +11,15 @@
 function commerce_shipping_ui_menu() {
   $items = array();
 
-  $items['admin/commerce/config/shipping'] = array(
-    'title' => 'Shipping',
-    'description' => 'Manage shipping methods and services.',
-    'page callback' => 'commerce_shipping_ui_overview',
-    'page arguments' => array('methods'),
-    'access arguments' => array('administer shipping'),
-    'file' => 'includes/commerce_shipping_ui.admin.inc',
-  );
-
   $items['admin/commerce/config/shipping/methods'] = array(
     'title' => 'Shipping methods',
     'description' => 'Manage shipping methods.',
-    'weight' => 0,
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'commerce_shipping_ui_overview',
+    'page arguments' => array('methods'),
+    'access arguments' => array('administer shipping'),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/commerce_shipping_ui.admin.inc',
   );
 
   $shipping_methods = commerce_shipping_methods();
@@ -75,15 +70,20 @@ function commerce_shipping_ui_menu() {
     $default_method = NULL;
   }
 
-  $items['admin/commerce/config/shipping/services'] = array(
-    'title' => 'Shipping services',
-    'description' => 'Manage shipping services.',
+  $items['admin/commerce/config/shipping'] = array(
+    'title' => 'Shipping',
+    'description' => 'Manage shipping methods and services.',
     'page callback' => 'commerce_shipping_ui_overview',
     'page arguments' => array('services', $default_method),
     'access arguments' => array('administer shipping'),
-    'weight' => 5,
-    'type' => MENU_LOCAL_TASK,
     'file' => 'includes/commerce_shipping_ui.admin.inc',
+  );
+
+  $items['admin/commerce/config/shipping/services'] = array(
+    'title' => 'Shipping services',
+    'description' => 'Manage shipping services.',
+    'weight' => 0,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   foreach ($shipping_methods as $method_name => $shipping_method) {
@@ -195,14 +195,14 @@ function commerce_shipping_ui_theme() {
  * Implements hook_help().
  */
 function commerce_shipping_ui_help($path, $arg) {
-  if (strpos($path, 'admin/commerce/config/shipping/services') === 0 && empty($arg[6])) {
-    return '<p>' . t('Shipping services are the various delivery options customers may choose from to have your products shipped to them (e.g. First Class, Ground, Next Day Air).') . '</p>';
+  if (strpos($path, 'admin/commerce/config/shipping/methods') === 0 && empty($arg[6])) {
+    return '<p>' . t('Shipping methods are used to define available shipping services and calculate their rates (e.g. store defined flat rates, carrier calculated rates).') . '</p>';
   }
 
   switch ($path) {
     case 'admin/commerce/config/shipping':
-    case 'admin/commerce/config/shipping/methods':
-      return '<p>' . t('Shipping methods are the different models used to determine the available shipping services and their rates for your store (e.g. store defined flat rates, carrier calculated rates).') . '</p>';
+    case 'admin/commerce/config/shipping/services':
+      return '<p>' . t('Shipping services are the various delivery options customers may choose from to have your products shipped to them (e.g. Standard shipping, Free shipping, Ground, Next Day Air).') . '</p>';
 
     case 'admin/commerce/config/shipping/calculation-rules':
       return t('Prior to display, shipping rates are calculated for each service using a base rate determined by the shipping method module and the rule configurations listed below. Calculation rules can be used for things like discounting or taxing shipping costs depending on the Rules elements defined by your enabled modules.');
