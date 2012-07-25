@@ -196,13 +196,13 @@ function commerce_shipping_ui_theme() {
  */
 function commerce_shipping_ui_help($path, $arg) {
   if (strpos($path, 'admin/commerce/config/shipping/services') === 0 && empty($arg[6])) {
-    return '<p>' . t('Shipping services are the specific ways of shipping (Post, Express, Freight, Air, etc).') . '</p>';
+    return '<p>' . t('Shipping services are the various delivery options customers may choose from to have your products shipped to them (e.g. First Class, Ground, Next Day Air).') . '</p>';
   }
 
   switch ($path) {
     case 'admin/commerce/config/shipping':
     case 'admin/commerce/config/shipping/methods':
-      return '<p>' . t('Shipping methods are the different models that are used for shipping (e.g. flat rate, variable rate).') . '</p>';
+      return '<p>' . t('Shipping methods are the different models used to determine the available shipping services and their rates for your store (e.g. store defined flat rates, carrier calculated rates).') . '</p>';
 
     case 'admin/commerce/config/shipping/calculation-rules':
       return t('Prior to display, shipping rates are calculated for each service using a base rate determined by the shipping method module and the rule configurations listed below. Calculation rules can be used for things like discounting or taxing shipping costs depending on the Rules elements defined by your enabled modules.');
