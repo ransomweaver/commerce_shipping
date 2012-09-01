@@ -18,6 +18,13 @@ function commerce_shipping_pane_settings_form($checkout_pane) {
     '#default_value' => variable_get('commerce_shipping_pane_require_service', FALSE),
   );
 
+  $form['commerce_shipping_recalculate_services'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Recalculate shipping rates via AJAX as addresses are updated on the checkout form.'),
+    '#description' => t('Recalculation is triggered when all required fields have been entered and the shipping services pane is visible on the page.'),
+    '#default_value' => variable_get('commerce_shipping_recalculate_services', TRUE),
+  );
+
   return $form;
 }
 
@@ -25,7 +32,13 @@ function commerce_shipping_pane_settings_form($checkout_pane) {
  * Checkout pane callback: builds a shipping quote selection form.
  */
 function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
-  $pane_form = array();
+  // Ensure this include file is loaded when the form is rebuilt from the cache.
+  $form_state['build_info']['files']['form'] = drupal_get_path('module', 'commerce_shipping') . '/includes/commerce_shipping.checkout_pane.inc';
+
+  $pane_form = array(
+    '#prefix' => '<div id="commerce-shipping-service-ajax-wrapper">',
+    '#suffix' => '</div>',
+  );
 
   // TODO: integrate with Commerce Physical Product to ensure an order contains
   // physical products before attempting to quote shipping rates.
@@ -82,9 +95,11 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       }
     }
 
-    // If we still don't have a default value, use the first available.
-    if (empty($default_value)) {
+    // If we still don't have a default value, use the first available and clear
+    // any related input from the form state.
+    if (empty($default_value) || empty($pane_form['shipping_service']['#options'][$default_value])) {
       $default_value = key($options);
+      unset($form_state['input']['commerce_shipping']['shipping_service']);
     }
 
     // Set the default value for the shipping method radios.
@@ -123,10 +138,103 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 }
 
 /**
- * Returns the shipping details element for display via AJAX.
+ * Ajax callback: Returns the shipping details form elements that match the
+ * currently selected shipping service.
  */
 function commerce_shipping_pane_service_details_refresh($form, $form_state) {
   return $form['commerce_shipping']['service_details'];
+}
+
+/**
+ * Ajax callback: Returns recalculated shipping services.
+ */
+function commerce_shipping_recalculate_services_refresh($form, $form_state) {
+  return $form['commerce_shipping'];
+}
+
+/**
+ * Submit callback for recalculating shipping services.
+ */
+function commerce_shipping_recalculate_services_submit($form, &$form_state) {
+  $order = $form_state['order'];
+  $rebuild = FALSE;
+
+  // If any customer profile pane exists on the form, process its input before
+  // recalculating shipping rates. This may mean submitting the checkout pane
+  // itself, but it may also involve copying the necessary data from another
+  // customer profile checkout pane.
+  foreach (commerce_customer_profile_types() as $type => $profile_type) {
+    $pane_id = 'customer_profile_' . $type;
+
+    // If this pane is actually present in the form...
+    if (!empty($form[$pane_id])) {
+      // If the profile copy button has been checked for this customer profile...
+      if (!empty($order->data['profile_copy'][$pane_id]['status'])) {
+        $source_id = 'customer_profile_' . variable_get('commerce_' . $pane_id . '_profile_copy_source', '');
+        $info = array('commerce_customer_profile', $type, $pane_id);
+
+        // Try getting the source profile data from validated input in the form
+        // state's values array if it is present on the form.
+        if (isset($form_state['values'][$source_id])) {
+          commerce_customer_profile_copy_fields($info, $form_state['input'][$pane_id], $form_state['input'][$source_id], $form_state);
+          commerce_customer_profile_copy_fields($info, $form_state['values'][$pane_id], $form_state['values'][$source_id], $form_state);
+        }
+        else {
+          // Otherwise, attempt to get source profile from the order object.
+          $wrapper = entity_metadata_wrapper('commerce_order', $order);
+          $profile = NULL;
+
+          // Look first for a profile coming from a matching customer profile
+          // reference field.
+          if ($source_field_name = variable_get('commerce_' . $source_id . '_field', '')) {
+            $profile = $wrapper->{$source_field_name}->value();
+          }
+          elseif (!empty($form_state['order']->data['profiles'][$source_id])) {
+            // Otherwise fallback to the customer profile referenced in the order
+            // data array.
+            $profile = commerce_customer_profile_load($form_state['order']->data['profiles'][$source_id]);
+          }
+
+          // Assuming we found a source profile, use that to copy data into the
+          // form state for the current profile.
+          if (!empty($profile)) {
+            commerce_customer_profile_copy_fields($info, $form_state['input'][$pane_id], $profile, $form_state);
+            commerce_customer_profile_copy_fields($info, $form_state['values'][$pane_id], $profile, $form_state);
+          }
+        }
+
+        // Unset any cached addressfield data for this customer profile.
+        foreach ($form_state['addressfield'] as $key => $value) {
+          if (strpos($key, 'commerce_customer_profile|' . $type) === 0) {
+            unset($form_state['addressfield'][$key]);
+          }
+        }
+      }
+
+      // Now that we have data in the form state array for the copied address,
+      // go ahead and validate the data through the checkout pane's validation
+      // handler.
+      $checkout_pane = commerce_checkout_pane_load($pane_id);
+      $validate = TRUE;
+
+      if ($callback = commerce_checkout_pane_callback($checkout_pane, 'checkout_form_validate')) {
+        $validate &= $callback($form, $form_state, $checkout_pane, $order);
+
+        // Submit the pane if it validated, which will result in the customer
+        // profile being saved.
+        if ($validate && $callback = commerce_checkout_pane_callback($checkout_pane, 'checkout_form_submit')) {
+          $callback($form, $form_state, $checkout_pane, $order);
+          $rebuild = TRUE;
+        }
+      }
+    }
+  }
+
+  // Save the order and rebuild the form to reflect the updated customer data.
+  if ($rebuild) {
+    commerce_order_save($order);
+    $form_state['rebuild'] = TRUE;
+  }
 }
 
 /**

@@ -999,3 +999,76 @@ function commerce_shipping_add_shipping_line_item($line_item, $order, $skip_save
 
   return $line_item;
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_state) {
+  // Attach the JavaScript to the page to recalculate services if it is enabled
+  // for this form. We do this in a form alter instead of the checkout pane's
+  // form callback to ensure the whole initial form has been built.
+  if (commerce_shipping_recalculate_services($form)) {
+    // Build an array to limit validation errors to customer profile data and
+    // the currently selected shipping service.
+    $limit_validation = array(array('commerce_shipping', 'shipping_service'));
+
+    foreach (commerce_customer_profile_types() as $type => $profile_type) {
+      $limit_validation[] = array('customer_profile_' . $type);
+    }
+
+    // Add a hidden submit button to the page that we'll use to recalculate
+    // shipping when the form is updated or a non-JS customer clicks the button.
+    $form['commerce_shipping']['recalculate'] = array(
+      '#type' => 'submit',
+      '#value' => t('Recalculate shipping'),
+      '#limit_validation_errors' => $limit_validation,
+      '#submit' => array('commerce_shipping_recalculate_services_submit'),
+      '#weight' => -10,
+      '#states' => array(
+        'invisible' => array(
+          ':input[id^="edit-commerce-shipping-recalculate"]' => array('value' => t('Recalculate shipping')),
+        ),
+      ),
+      '#ajax' => array(
+        'callback' => 'commerce_shipping_recalculate_services_refresh',
+        'wrapper' => 'commerce-shipping-service-ajax-wrapper',
+        'event' => 'click',
+      ),
+      '#attached' => array(
+        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/commerce_shipping.js'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_commerce_customer_profile_copy_refresh_alter().
+ */
+function commerce_shipping_commerce_customer_profile_copy_refresh_alter(&$commands, $form, $form_state) {
+  // Add an AJAX command to click the shipping recalculation button after the
+  // customer clicks a profile copy button.
+  if (!empty($form['commerce_shipping']['recalculate'])) {
+    $commands[] = ajax_command_invoke(NULL, 'commerceCheckShippingRecalculation', array());
+  }
+}
+
+/**
+ * Determines whether or not automatic shipping service recalculation is valid
+ * for the given form.
+ */
+function commerce_shipping_recalculate_services($form) {
+  $recalculate = FALSE;
+
+  // If the shipping services pane is on the form and it has been configured to
+  // support automatic recalculation...
+  if (!empty($form['commerce_shipping']) && variable_get('commerce_shipping_recalculate_services', TRUE)) {
+    // Ensure at least one customer profile pane exists on the form.
+    foreach (commerce_customer_profile_types() as $type => $profile_type) {
+      if (!empty($form['customer_profile_' . $type])) {
+        $recalculate = TRUE;
+      }
+    }
+  }
+
+  return $recalculate;
+}
