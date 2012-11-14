@@ -135,6 +135,42 @@ function commerce_shipping_commerce_price_component_type_info() {
 }
 
 /**
+ * Implements hook_modules_enabled().
+ */
+function commerce_shipping_modules_enabled($modules) {
+  commerce_shipping_methods_reset();
+  commerce_shipping_services_reset();
+  _commerce_shipping_default_rules_reset($modules);
+}
+
+/**
+ * Resets default Rules if necessary when modules are enabled or disabled.
+ *
+ * @param $modules
+ *   An array of module names that have been enabled or disabled.
+ */
+function _commerce_shipping_default_rules_reset($modules) {
+  $reset_default_rules = FALSE;
+
+  // Look for any module defining a new shipping method or service.
+  foreach ($modules as $module) {
+    if (function_exists($module . '_commerce_shipping_method_info') ||
+      function_exists($module . '_commerce_shipping_service_info')) {
+      $reset_default_rules = TRUE;
+    }
+  }
+
+  // If we found a module defining a new shipping method or service, we need to
+  // rebuild the default Rules especially for this module so the default rules
+  // and components will appear properly for this module.
+  if ($reset_default_rules) {
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+}
+
+/**
  * Returns an array of shipping methods defined by enabled modules.
  *
  * @return
