@@ -97,7 +97,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
 
           // If the service details value is empty, see if there are any values
           // in the line item to merge into the array as defaults.
-          if (empty($pane_values['service_details'])) {
+          if (empty($pane_values['service_details']) && !empty($line_item_wrapper->value()->data['service_details'])) {
             $pane_values['service_details'] = $line_item_wrapper->value()->data['service_details'];
           }
 
