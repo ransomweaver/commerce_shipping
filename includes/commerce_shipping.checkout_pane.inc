@@ -289,7 +289,7 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
     }
 
     // Only attempt validation if there were shipping services available.
-    if ($pane_values['shipping_rates']) {
+    if (!empty($pane_values['shipping_rates'])) {
       // If the selected shipping service was changed...
       if ($pane_values['shipping_service'] != $pane_form['shipping_service']['#default_value']) {
         // And the newly selected service has a valid details form callback...
