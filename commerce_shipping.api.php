@@ -90,6 +90,83 @@ function hook_commerce_shipping_service_info_alter(&$shipping_services) {
 }
 
 /**
+ * Allows modules or Rules to add shipping rates to an order object for use in
+ * building the shipping service checkout pane.
+ *
+ * Commerce Shipping includes a default Rules configuration that creates a rule
+ * per shipping method to go and find services defined by that method and use
+ * a rules component to determine whether or not the service should be rated
+ * for a particular order.
+ *
+ * Modules implementing this hook directly should add rates to the order object
+ * by adding them to the $order->shipping_rates associative array. The key
+ * should be the machine-name of the shipping service and the value should be a
+ * shipping line item for the service whose unit price is set to the rate
+ * customers will be charged if they select that service.
+ *
+ * @param $order
+ *   The order whose shipping rates should be collected.
+ *
+ * @see commerce_shipping_collect_rates()
+ */
+function hook_commerce_shipping_collect_rates($order) {
+  // No example.
+}
+
+/**
+ * Allows modules to add shipping rates to an order object for the specified
+ * shipping method for use in building the shipping service checkout pane.
+ *
+ * This function is typically called via the Rules action "Collect rates for a
+ * shipping method" attached to a default Rule. The hook functions just like
+ * hook_commerce_shipping_collect_rates() but requests shipping rates added to
+ * the order only be for the specified shipping method.
+ *
+ * @param $method
+ *   The machine-name of the shipping method shipping rate collection should
+ *   be limited to.
+ * @param $order
+ *   The order whose shipping rates should be collected.
+ *
+ * @see hook_commerce_shipping_collect_rates()
+ * @see commerce_shipping_method_collect_rates()
+ */
+function hook_commerce_shipping_method_collect_rates($method, $order) {
+  // No example.
+}
+
+/**
+ * Allows modules or Rules to perform additional calculation of a shipping rate
+ * on top of the base rate determined by the shipping service.
+ *
+ * Rate calculation rules work in much the same way as product pricing rules.
+ * The event and hook take a shipping line item parameter whose unit price has
+ * been initialized to the base rate for the shipping service. The unit price
+ * may then be updated by the unit price manipulation Rules actions or directly
+ * in code.
+ *
+ * Manipulations made via custom code should update the unit price and
+ * create a price component in the unit price's data array representing the
+ * change in pricing. Without this price component, the change to the unit price
+ * amount will not be reflected in order total calculation.
+ *
+ * While it is not part of the rate calculation process, the function
+ * commerce_shipping_example_service_details_form_submit() demonstrates what it
+ * means both to increment the shipping line item's unit price amount and to add
+ * a price component to its data array representing the change.
+ *
+ * @param $line_item
+ *   The shipping line item that represents the shipping rate the customer must
+ *   pay if the related shipping service is selected.
+ *
+ * @see commerce_shipping_service_rate_calculate()
+ * @see commerce_shipping_example_service_details_form_submit()
+ */
+function hook_commerce_shipping_calculate_rate($line_item) {
+  // No example.
+}
+
+/**
  * Allows modules to alter the options array generated to select a shipping
  * service on the checkout form.
  *
