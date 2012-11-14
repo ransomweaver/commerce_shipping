@@ -113,8 +113,8 @@ function commerce_shipping_example_service_details_form_submit($details_form, $d
       'data' => array(),
     );
 
-    // Multiply the unit price by 2.
-    $line_item_wrapper->commerce_unit_price->amount += 1500;
+    // Add the express upcharge to the line item unit price.
+    $line_item_wrapper->commerce_unit_price->amount = $line_item_wrapper->commerce_unit_price->amount->value() + 1500;
 
     // Add the express delivery fee component to the unit price.
     $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
