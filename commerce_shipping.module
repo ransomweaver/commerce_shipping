@@ -1022,6 +1022,7 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
       '#type' => 'submit',
       '#value' => t('Recalculate shipping'),
       '#limit_validation_errors' => $limit_validation,
+      '#validate' => array('commerce_shipping_recalculate_services_validate'),
       '#submit' => array('commerce_shipping_recalculate_services_submit'),
       '#weight' => -10,
       '#states' => array(
@@ -1056,19 +1057,55 @@ function commerce_shipping_commerce_customer_profile_copy_refresh_alter(&$comman
  * Determines whether or not automatic shipping service recalculation is valid
  * for the given form.
  */
-function commerce_shipping_recalculate_services($form) {
-  $recalculate = FALSE;
-
+function commerce_shipping_recalculate_services($form, $form_state = NULL, $ignore_shipping = FALSE) {
   // If the shipping services pane is on the form and it has been configured to
   // support automatic recalculation...
-  if (!empty($form['commerce_shipping']) && variable_get('commerce_shipping_recalculate_services', TRUE)) {
-    // Ensure at least one customer profile pane exists on the form.
-    foreach (commerce_customer_profile_types() as $type => $profile_type) {
-      if (!empty($form['customer_profile_' . $type])) {
-        $recalculate = TRUE;
+  if ((!empty($form['commerce_shipping']) || $ignore_shipping) && variable_get('commerce_shipping_recalculate_services', TRUE)) {
+    // If no form state was passed in, we only need to determine whether or not
+    // there is a customer profile pane on the current form that might trigger
+    // shipping rate recalculation if its form elements are changed.
+    if (empty($form_state)) {
+      // Loop over all of the customer profile types.
+      foreach (commerce_customer_profile_types() as $type => $profile_type) {
+        // If its pane is on the current form...
+        if (!empty($form['customer_profile_' . $type])) {
+          // Enable shipping service recalculation on the form.
+          return TRUE;
+        }
       }
+      return FALSE;
+    }
+    else {
+      // If we did get a form state, extract the order from it.
+      $order = $form_state['order'];
+
+      // Loop over the customer profile types looking for any represented on the
+      // current checkout form.
+      foreach (commerce_customer_profile_types() as $type => $profile_type) {
+        // If the current type is on the form...
+        if (!empty($form['customer_profile_' . $type])) {
+          // Load the checkout pane to find its checkout pane validate callback.
+          $checkout_pane = commerce_checkout_pane_load($pane_id);
+
+          // If it has a validate callback...
+          if ($callback = commerce_checkout_pane_callback($checkout_pane, 'checkout_form_validate')) {
+            // Disallow shipping service recalculation on the current form build
+            // if the current form state values do not pass validation.
+            $validate = !empty($form_state['values'][$checkout_pane['pane_id']]) && $callback($form, $form_state, $checkout_pane, $order);
+
+            if (!$validate) {
+              return FALSE;
+            }
+          }
+        }
+      }
+
+      // Otherwise enable recalculation since we'll have the data we need to
+      // update or insert the customer profiles represented on the form, giving
+      // us the address data we need to recalculate shipping services.
+      return TRUE;
     }
   }
 
-  return $recalculate;
+  return FALSE;
 }
