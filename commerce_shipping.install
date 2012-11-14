@@ -141,19 +141,86 @@ function commerce_shipping_update_7004($sandbox) {
 }
 
 /**
- * Rename the commerce_shipping_method field on the shipping line item to commerce_shipping_service.
- * Part of upgrade path from 1.x
+ * Upgrade from Commerce Shipping 1.x by renaming the commerce_shipping_method
+ * field on the shipping line item type to commerce_shipping_service and
+ * converting price components on shipping line items to the generic Shipping
+ * price component type. Before proceeding, ensure that any shipping method
+ * modules designed to work with Commerce Shipping 1.x have been disabled but
+ * not uninstalled. They may be uninstalled after the update is complete.
  */
-function commerce_shipping_update_7100($sandbox) {
-  if (field_info_field('commerce_shipping_method')) {
+function commerce_shipping_update_7100(&$sandbox) {
+  // Prepare the batch process sandbox if it hasn't started yet.
+  if (empty($sandbox)) {
+    $sandbox['progress'] = 0;
+    $sandbox['max'] = db_query("SELECT COUNT(line_item_id) FROM {commerce_line_item} WHERE type = 'shipping'")->fetchColumn();
+    $sandbox['current'] = 0;
+
+    // At this time, also add the commerce_shipping_service field to the
+    // shipping line item type.
     commerce_shipping_line_item_configuration(array('type' => 'shipping'));
-    foreach (commerce_line_item_load_multiple(FALSE, array('type' => 'shipping')) as $line_item) {
-      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-      if (!$line_item_wrapper->commerce_shipping_service->value()) {
-        $line_item_wrapper->commerce_shipping_service = $line_item_wrapper->commerce_shipping_method->value();
-        $line_item_wrapper->save();
+  }
+
+  // Fetch the next 25 shipping line item IDs for upgrade.
+  $line_item_ids = array_keys(db_query("SELECT line_item_id FROM {commerce_line_item} WHERE type = 'shipping' AND line_item_id > :current ORDER BY line_item_id ASC LIMIT 25", array(':current' => $sandbox['current']))->fetchAllAssoc('line_item_id', PDO::FETCH_ASSOC));
+
+  // Loop over the loaded line items to update their unit prices.
+  foreach (commerce_line_item_load_multiple($line_item_ids) as $line_item) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $update_order = FALSE;
+
+    // Set the shipping service value to whatever the previous shipping method
+    // value was if possible.
+    if (!$line_item_wrapper->commerce_shipping_service->value() && !empty($line_item->commerce_shipping_method)) {
+      $line_item_wrapper->commerce_shipping_service = $line_item_wrapper->commerce_shipping_method->value();
+    }
+
+    // Extract the total price array from the line item.
+    $commerce_total = $line_item_wrapper->commerce_total->value();
+
+    // Loop over the price components in the unit price.
+    foreach ($commerce_total['data']['components'] as &$component) {
+      // If the component came from Commerce Shipping 1.x...
+      if (substr($component['name'], 0, 5) == 'quote') {
+        // Store the original price component in the component's data array.
+        $component['data'] = array(
+          'original_shipping_component' => array(
+            'name' => $component['name'],
+            'data' => $component['data'],
+          ),
+        );
+
+        // Convert the current component type to the generic shipping price
+        // component type offered by Commerce Shipping 2.x.
+        $component['name'] = 'shipping';
+
+        // Indicate that this order must be saved due to the update.
+        $update_order = TRUE;
       }
     }
+
+    // Update the unit price to include the updated components and reset the
+    // quantity of the line item to 1.
+    $line_item_wrapper->commerce_unit_price = $commerce_total;
+    $line_item_wrapper->quantity = 1;
+    $line_item_wrapper->save();
+
+    // If the order should be updated, trigger that now.
+    if ($update_order) {
+      $order = commerce_order_load($line_item_wrapper->order_id->value());
+      commerce_order_save($order);
+    }
+
+    $sandbox['progress']++;
+    $sandbox['current'] = $line_item->line_item_id;
+  }
+
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : $sandbox['progress'] / $sandbox['max'];
+
+  // If the batch update is now complete...
+  if ($sandbox['#finished'] == 1) {
+    // Delete the commerce_shipping_method field from Commerce Shipping 1.x.
     field_delete_field('commerce_shipping_method');
+
+    return t('Your Commerce Shipping 1.x line items have been updated to work with Commerce Shipping 2.x. However, there is no upgrade path for shipping method modules because of the very different way the two versions of Commerce Shipping integrate with Rules. You must manually reconfigure your shipping methods to work with the 2.x version, in some cases even installing a new module. For example, if you used the Commerce Shipping Flat Rate module with Commerce Shipping 1.x, you must now switch to the Commerce Flat Rate module and reconfigure the conditions that determine when a flat rate shipping service should be presented to customers. For more information, please refer to the project pages for the shipping method modules.');
   }
 }
