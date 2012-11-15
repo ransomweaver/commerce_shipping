@@ -171,6 +171,23 @@ function _commerce_shipping_default_rules_reset($modules) {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function commerce_shipping_module_implements_alter(&$implementations, $hook) {
+  // To allow the default rules defined by this module to be overridden by other
+  // modules (such as Features produced modules), we need to ensure that this
+  // module's hook_default_rules_configuration() is invoked before theirs.
+  if ($hook == 'default_rules_configuration') {
+    // Extract this module's entry from the hook implementations array.
+    $group = $implementations['commerce_shipping'];
+    unset($implementations['commerce_shipping']);
+
+    // And re-add it by prepending it back onto the array.
+    $implementations = array('commerce_shipping' => $group) + $implementations;
+  }
+}
+
+/**
  * Returns an array of shipping methods defined by enabled modules.
  *
  * @return
