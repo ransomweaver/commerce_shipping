@@ -921,6 +921,9 @@ function commerce_shipping_line_item_new($service, $unit_price, $order_id = 0, $
   // Populate it with the shipping service and unit price data.
   commerce_shipping_line_item_populate($line_item, $service, $unit_price);
 
+  // Allow other modules to add additional data to the line item if necessary.
+  drupal_alter('commerce_shipping_line_item_new', $line_item);
+
   // Return the line item.
   return $line_item;
 }

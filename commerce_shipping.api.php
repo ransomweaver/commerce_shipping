@@ -190,3 +190,16 @@ function hook_commerce_shipping_calculate_rate($line_item) {
 function hook_commerce_shipping_service_rate_options_alter(&$options, $order) {
   // No example.
 }
+
+/**
+ * Allows modules to alter newly created shipping line items after their service
+ * and unit price values have been set.
+ *
+ * @param $line_item
+ *   The newly created shipping line item.
+ *
+ * @see commerce_shipping_line_item_new()
+ */
+function hook_commerce_shipping_line_item_new_alter($line_item) {
+  // No example.
+}
