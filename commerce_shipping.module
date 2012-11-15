@@ -1061,11 +1061,6 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
       '#validate' => array('commerce_shipping_recalculate_services_validate'),
       '#submit' => array('commerce_shipping_recalculate_services_submit'),
       '#weight' => -10,
-      '#states' => array(
-        'invisible' => array(
-          ':input[id^="edit-commerce-shipping-recalculate"]' => array('value' => t('Recalculate shipping')),
-        ),
-      ),
       '#ajax' => array(
         'callback' => 'commerce_shipping_recalculate_services_refresh',
         'wrapper' => 'commerce-shipping-service-ajax-wrapper',
@@ -1075,6 +1070,17 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
         'js' => array(drupal_get_path('module', 'commerce_shipping') . '/commerce_shipping.js'),
       ),
     );
+
+    // Hide the recalculation button via JavaScript if there are shipping rate
+    // options or if there aren't any options and shipping service selection is
+    // required for checkout.
+    if (!empty($form['commerce_shipping']['shipping_rates']['#value']) || !variable_get('commerce_shipping_pane_require_service', FALSE)) {
+      $form['commerce_shipping']['recalculate']['#states'] = array(
+        'invisible' => array(
+          ':input[id^="edit-commerce-shipping-recalculate"]' => array('value' => t('Recalculate shipping')),
+        ),
+      );
+    }
   }
 }
 

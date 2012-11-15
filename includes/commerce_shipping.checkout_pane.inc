@@ -54,14 +54,8 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   // Generate an array of shipping service rate options.
   $options = commerce_shipping_service_rate_options($order);
 
-  // If live shipping rate recalculation is required, check if we can show shipping options.
-  if (commerce_shipping_recalculate_services($form, NULL, TRUE) && empty($form_state['recalculate'])) {
-    $pane_form['message'] = array(
-      '#markup' => '<div>' . t('Please supply all of the required information requested above to reveal your shipping options.') . '</div>',
-    );
-  }
   // If at least one shipping option is available...
-  elseif (!empty($options)) {
+  if (!empty($options)) {
     // Store the shipping methods in the form for validation purposes.
     $pane_form['shipping_rates'] = array(
       '#type' => 'value',
@@ -134,9 +128,25 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     $pane_form['service_details']['#prefix'] = '<div id="commerce-shipping-service-details">';
     $pane_form['service_details']['#suffix'] = '</div>';
   }
-  elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
+  else {
+    // Otherwise display a message indicating whether or not we need a shipping
+    // service to be selected to complete checkout.
+    if (variable_get('commerce_shipping_pane_require_service', FALSE)) {
+      $message = t('No valid shipping rates found for your order, and we require shipping service selection to complete checkout.') . '<br /><strong>' . t('Please verify you have supplied all required information or contact us to resolve the issue.') . '</strong>';
+    }
+    else {
+      // If live shipping rate recalculation is required, check if we can show shipping options.
+      if (commerce_shipping_recalculate_services($form, NULL, TRUE) && empty($form_state['recalculate'])) {
+        $message = t('Please supply all of the required information requested above to reveal your shipping options.');
+      }
+      else {
+        $message = t('No shipping rates found for your order. Please continue the checkout process.');
+      }
+    }
+
     $pane_form['message'] = array(
-      '#markup' => '<div>' . t('Unfortunately we could not calculate any valid shipping rates for your order, and we require shipping service selection to complete checkout.') . '<br /><strong>' . t('Please contact us to resolve any issues with your order.') . '</strong></div>',
+      '#markup' => '<div>' . $message . '</div>',
+      '#weight' => -20,
     );
   }
 
@@ -316,7 +326,7 @@ function commerce_shipping_pane_checkout_form_validate($form, &$form_state, $che
     }
     elseif (variable_get('commerce_shipping_pane_require_service', FALSE)) {
       // But fail validation if no rates were returned and we require selection.
-      drupal_set_message(t('You cannot continue checkout without selecting a valid shipping service. Please contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
+      drupal_set_message(t('You cannot continue checkout without selecting a valid shipping service. Please verify your address information or contact us if an error is preventing you from seeing valid shipping rates for your order.'), 'error');
       return FALSE;
     }
   }
