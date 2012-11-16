@@ -1087,7 +1087,7 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
         'event' => 'click',
       ),
       '#attached' => array(
-        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/commerce_shipping.js'),
+        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/js/commerce_shipping.js'),
       ),
     );
 
