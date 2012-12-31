@@ -62,10 +62,10 @@ function commerce_shipping_update_7002(&$sandbox) {
 
   foreach ($rules as $rule) {
     if ($rule->module == 'commerce_shipping') {
-    	if (strpos($rule->name, 'commerce_shipping_plugin') !== FALSE) {
-     		rules_config_delete(array($rule->id));
-     		$deleted += 1;
-    	}
+      if (strpos($rule->name, 'commerce_shipping_plugin') !== FALSE) {
+        rules_config_delete(array($rule->id));
+        $deleted += 1;
+      }
     }
   }
 
