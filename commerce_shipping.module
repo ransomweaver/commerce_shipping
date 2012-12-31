@@ -419,7 +419,9 @@ function commerce_shipping_service_get_title($name = NULL, $title_type = 'title'
 
   foreach ((array) $shipping_services as $key => $value) {
     $method_title = commerce_shipping_method_get_title($value['shipping_method']);
-    $shipping_service_titles[$method_title][$key] = $value[$title_type];
+    // Since Views needs a flat array and services must be unique, return a
+    // flat array.
+    $shipping_service_titles[$key] = $value[$title_type] . ' (' . $method_title . ')';
   }
 
   // Sort the title groups by method title.
