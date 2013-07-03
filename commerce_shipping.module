@@ -775,7 +775,8 @@ function commerce_shipping_line_item_title($line_item) {
     return $line_item->data['shipping_service']['display_title'];
   }
   // Then try to get the title from the shipping service.
-  elseif ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
+  elseif ($line_item_wrapper->commerce_shipping_service->value() != NULL &&
+    $title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
     return $title;
   }
 
