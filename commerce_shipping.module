@@ -626,7 +626,7 @@ function commerce_shipping_service_rate_options($order) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
     $options[$name] = t('!shipping_service: !price', array(
-      '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
+      '!shipping_service' => commerce_shipping_line_item_title($line_item),
       '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
     ));
   }
