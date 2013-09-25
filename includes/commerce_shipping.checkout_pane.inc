@@ -283,7 +283,11 @@ function commerce_shipping_recalculate_services_submit($form, &$form_state) {
 
   // Save the order and rebuild the form to reflect the updated customer data.
   if ($rebuild) {
-    commerce_order_save($order);
+    // Avoid overwriting an already updated order.
+    $stored_order = commerce_order_load($order->order_id);
+    if ($stored_order->changed < $order->changed) {
+      commerce_order_save($order);
+    }
     $form_state['rebuild'] = TRUE;
   }
 }
