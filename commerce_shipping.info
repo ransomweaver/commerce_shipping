@@ -7,3 +7,5 @@ dependencies[] = commerce_payment
 dependencies[] = list
 dependencies[] = rules
 core = 7.x
+
+files[] = includes/views/handlers/commerce_shipping_handler_relationship_shipping_line_item_representative.inc

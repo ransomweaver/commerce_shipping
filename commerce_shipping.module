@@ -46,6 +46,16 @@ function commerce_shipping_hook_info() {
 }
 
 /**
+ * Implements hook_views_api().
+ */
+function commerce_shipping_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_shipping') . '/includes/views',
+  );
+}
+
+/**
  * Implements hook_permission().
  */
 function commerce_shipping_permission() {
