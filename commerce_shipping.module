@@ -1079,7 +1079,7 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
   if (commerce_shipping_recalculate_services($form)) {
     // Build an array to limit validation errors to customer profile data and
     // the currently selected shipping service.
-    $limit_validation = array(array('commerce_shipping', 'shipping_service'));
+    $limit_validation = array(array('commerce_shipping', 'shipping_service'), array('commerce_shipping', 'service_details'));
 
     foreach (commerce_customer_profile_types() as $type => $profile_type) {
       $limit_validation[] = array('customer_profile_' . $type);
