@@ -36,7 +36,7 @@ $.fn.commerceCheckShippingRecalculation = function() {
   // as we can expect the forms to change and we want to see what the backend
   // think we should do.
   if (!$('[id^="edit-customer-profile-"]').find('.ajax-progress').length) {
-    $('[id^="edit-customer-profile-shipping"] .form-item').children('.required').each(function() {
+    $('[id^="edit-customer-profile-shipping"] .form-item').children('.required').filter(':not(.chosen-container)').each(function() {
       if (!$(this).val()) {
         recalculate = false;
       }
