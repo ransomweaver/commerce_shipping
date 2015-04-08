@@ -37,7 +37,7 @@ $.fn.commerceCheckShippingRecalculation = function() {
   // think we should do.
   if (!$('[id^="edit-customer-profile-"]').find('.ajax-progress').length) {
     $('[id^="edit-customer-profile-shipping"] .form-item').children('.required').each(function() {
-      if (!$(this).val() || $(this).val() == '' || $(this).val() == null) {
+      if (!$(this).val()) {
         recalculate = false;
       }
     });
