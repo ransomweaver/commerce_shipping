@@ -801,6 +801,10 @@ function commerce_shipping_line_item_title($line_item) {
 function commerce_shipping_line_item_add_form($form, &$form_state) {
   // Collect the available shipping rates for this order.
   $order = $form_state['commerce_order'];
+  // If possible load the order, since it sometimes is in a stale state.
+  if (!empty($order->order_id)) {
+    $order = commerce_order_load($order->order_id);
+  }
   commerce_shipping_collect_rates($order);
 
   // Store the available rates in the form.
