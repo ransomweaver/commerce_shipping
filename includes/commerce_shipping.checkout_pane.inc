@@ -418,7 +418,7 @@ function commerce_shipping_pane_review($form, $form_state, $checkout_pane, $orde
       // Return its label and formatted total price.
       $total_price = $line_item_wrapper->commerce_total->value();
       $rate = commerce_currency_format($total_price['amount'], $total_price['currency_code'], $line_item_wrapper->value());
-      return t('@service: @rate', array('@service' => $line_item_wrapper->line_item_label->value(), '@rate' => $rate));
+      return t('!service: !rate', array('!service' => $line_item_wrapper->line_item_label->value(), '!rate' => $rate));
     }
   }
 }
