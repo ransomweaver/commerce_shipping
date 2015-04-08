@@ -52,7 +52,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   commerce_shipping_collect_rates($order);
 
   // Generate an array of shipping service rate options.
-  $options = commerce_shipping_service_rate_options($order);
+  $options = commerce_shipping_service_rate_options($order, $form_state);
 
   // If at least one shipping option is available...
   if (!empty($options)) {

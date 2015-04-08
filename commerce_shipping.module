@@ -629,7 +629,7 @@ function commerce_shipping_service_rate_calculate($service, $price, $order_id = 
  *   An options array of calculated shipping rates labeled using the display
  *   title of the shipping services.
  */
-function commerce_shipping_service_rate_options($order) {
+function commerce_shipping_service_rate_options($order, &$form_state) {
   $options = array();
 
   foreach ($order->shipping_rates as $name => $line_item) {
@@ -642,7 +642,7 @@ function commerce_shipping_service_rate_options($order) {
   }
 
   // Allow modules to alter the options array generated for the rates.
-  drupal_alter('commerce_shipping_service_rate_options', $options, $order);
+  drupal_alter('commerce_shipping_service_rate_options', $options, $order, $form_state);
 
   return $options;
 }
@@ -814,7 +814,7 @@ function commerce_shipping_line_item_add_form($form, &$form_state) {
   );
 
   // Create an options array based on the rated services.
-  $options = commerce_shipping_service_rate_options($order);
+  $options = commerce_shipping_service_rate_options($order, $form_state);
   $options['manual'] = t('Manually specify a shipping service and rate.');
 
   $form['shipping_service'] = array(
