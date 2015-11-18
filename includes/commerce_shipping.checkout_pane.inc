@@ -178,20 +178,6 @@ function commerce_shipping_recalculate_services_refresh($form, $form_state) {
  * Validate callback for recalculating shipping services.
  */
 function commerce_shipping_recalculate_services_validate($form, &$form_state) {
-
-  // Load latest version of the order.
-  $order = commerce_order_load($form_state['order']->order_id);
-  // Check if the order is still on the same checkout step.
-  $checkout_page = $form_state['checkout_page'];
-  if ($form_state['order']->changed < $order->changed || !commerce_checkout_page_access($checkout_page, $order)) {
-    // Clear all errors.
-    form_clear_error();
-    watchdog('access denied', check_plain($_GET['q']), NULL, WATCHDOG_WARNING);
-    drupal_set_message(t('You are not authorized to access this command.'), 'error');
-    $form_state['rebuild'] = TRUE;
-    return FALSE;
-  }
-
   // Call all validation callbacks.
   $recalculate = commerce_shipping_recalculate_services($form, $form_state);
 
@@ -297,9 +283,12 @@ function commerce_shipping_recalculate_services_submit($form, &$form_state) {
 
   // Save the order and rebuild the form to reflect the updated customer data.
   if ($rebuild) {
+    // Reset commerce_order entity cache so we can check "changed" properly.
+    entity_get_controller('commerce_order')->resetCache();
+
     // Avoid overwriting an already updated order.
     $stored_order = commerce_order_load($order->order_id);
-    if ($stored_order->changed <= $order->changed) {
+    if ($stored_order->changed < $order->changed) {
       commerce_order_save($order);
     }
     $form_state['rebuild'] = TRUE;
