@@ -1,0 +1,7 @@
+commerce_shipping.admin_overview:
+  path: '/admin/commerce/shipping'
+  defaults:
+    _controller: '\Drupal\commerce_shipping\Controller\CommerceShippingController::adminOverviewPage'
+    _title: 'Commerce Shipping'
+  requirements:
+    _permission: 'access administration pages'

@@ -1,0 +1,5 @@
+commerce_shipping.admin_overview:
+  title: 'Shipping'
+  route_name: 'commerce_shipping.admin_overview'
+  parent: 'commerce.admin_commerce'
+  description: 'Manage your shipping services and methods.'
