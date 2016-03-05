@@ -1,0 +1,7 @@
+name: Shipping
+type: module
+description: 'Implement core shipping features for Drupal commerce.'
+package: Commerce (shipping)
+core: 8.x
+dependencies:
+  - commerce

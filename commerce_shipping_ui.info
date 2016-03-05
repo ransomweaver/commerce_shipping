@@ -1,8 +1,0 @@
-name = Shipping UI
-description = Provides an interface for viewing and managing shipping methods and services.
-package = Commerce (shipping)
-dependencies[] = rules
-dependencies[] = commerce
-dependencies[] = commerce_shipping
-core = 7.x
-configure = admin/commerce/config/shipping
