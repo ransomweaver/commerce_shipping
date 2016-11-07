@@ -1,7 +1,0 @@
-name: Shipping example
-type: module
-description: 'Example module, used for testing and code documentation. Should not be used on a production enviroment'
-package: Commerce (shipping)
-core: 8.x
-dependencies:
-  - commerce_shipping

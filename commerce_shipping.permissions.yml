@@ -1,0 +1,4 @@
+administer commerce_shipping_method:
+  title: 'Administer shipping methods'
+  'restrict access': TRUE
+

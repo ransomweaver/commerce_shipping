@@ -1,4 +1,4 @@
 services:
-  plugin.manager.commerce_shipping_service:
-    class: Drupal\commerce_shipping\Plugin\CommerceShippingServicePluginManager
+  plugin.manager.commerce_shipping_method:
+    class: Drupal\commerce_shipping\ShippingMethodManager
     parent: default_plugin_manager

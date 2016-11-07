@@ -1,5 +1,5 @@
-commerce_shipping.admin_overview:
-  title: 'Shipping'
-  route_name: 'commerce_shipping.admin_overview'
-  parent: 'commerce.admin_commerce'
-  description: 'Manage your shipping services and methods.'
+entity.commerce_shipping_method.collection:
+  title: 'Shipping methods'
+  route_name: 'entity.commerce_shipping_method.collection'
+  parent: 'commerce.configuration'
+  description: 'Manage your shipping methods.'

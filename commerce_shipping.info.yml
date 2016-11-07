@@ -1,8 +1,9 @@
 name: Shipping
 type: module
-description: 'Implement core shipping features for Drupal commerce.'
+description: 'Provides core shipping functionality.'
 package: Commerce (shipping)
 core: 8.x
 configure: commerce_shipping.admin_overview
 dependencies:
   - commerce
+  - commerce_price

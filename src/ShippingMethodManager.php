@@ -1,23 +1,21 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\commerce_shipping\Plugin\CommerceShippingServicePluginManager.
- */
-
-namespace Drupal\commerce_shipping\Plugin;
+namespace Drupal\commerce_shipping;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 /**
- * Plugin type manager for CommerceShippingService Plugin.
+ * Manages discovery and instantiation of shipping method plugins.
+ *
+ * @see \Drupal\commerce_shipping\Annotation\CommerceShippingMethod
+ * @see plugin_api
  */
-class CommerceShippingServicePluginManager extends DefaultPluginManager {
+class ShippingMethodManager extends DefaultPluginManager {
 
   /**
-   * Constructs a CommerceShippingServicePluginManager object.
+   * Constructs a new ShippingMethodManager object.
    *
    * @param \Traversable $namespaces
    *   An object that implements \Traversable which contains the root paths
@@ -28,9 +26,9 @@ class CommerceShippingServicePluginManager extends DefaultPluginManager {
    *   The module handler to invoke the alter hook with.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct("Plugin/CommerceShippingService", $namespaces, $module_handler, 'Drupal\commerce_shipping\Plugin\CommerceShippingService\CommerceShippingServicePluginInterface', 'Drupal\commerce_shipping\Annotation\CommerceShippingService');
+    parent::__construct('Plugin/Commerce/ShippingMethod', $namespaces, $module_handler, 'Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface', 'Drupal\commerce_shipping\Annotation\CommerceShippingMethod');
 
-    $this->setCacheBackend($cache_backend, 'commerce_shipping_service_plugins');
+    $this->setCacheBackend($cache_backend, 'commerce_shipping_method_plugins');
   }
 
 }
