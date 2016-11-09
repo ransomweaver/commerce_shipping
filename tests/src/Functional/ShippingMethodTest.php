@@ -50,8 +50,9 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
       'label' => 'Example',
       'status' => '1',
       'plugin' => 'flat_rate',
-      'configuration[amount][number]' => '20.00',
-      'configuration[amount][currency_code]' => 'USD',
+      'configuration[rate_label]' => 'Overnight shipping',
+      'configuration[rate_amount][number]' => '20.00',
+      'configuration[rate_amount][currency_code]' => 'USD',
       // Setting the 'id' can fail if focus switches to another field.
       // This is a bug in the machine name JS that can be reproduced manually.
       'id' => 'example',
@@ -67,7 +68,8 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
     $this->assertEquals(TRUE, $shipping_method->status());
     $shipping_method_plugin = $shipping_method->getPlugin();
     $configuration = $shipping_method_plugin->getConfiguration();
-    $this->assertEquals(['number' => '20.00', 'currency_code' => 'USD'], $configuration['amount']);
+    $this->assertEquals('Overnight shipping', $configuration['rate_label']);
+    $this->assertEquals(['number' => '20.00', 'currency_code' => 'USD'], $configuration['rate_amount']);
   }
 
   /**
@@ -79,7 +81,8 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
       'label' => 'Edit example',
       'plugin' => 'flat_rate',
       'configuration' => [
-        'amount' => [
+        'rate_label' => 'Overnight shipping',
+        'rate_amount' => [
           'number' => '20.00',
           'currency_code' => 'USD',
         ],
@@ -90,8 +93,8 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
 
     $this->drupalGet('admin/commerce/config/shipping-methods/manage/' . $shipping_method->id());
     $edit = [
-      'configuration[amount][number]' => '3.00',
-      'configuration[amount][currency_code]' => 'USD',
+      'configuration[rate_amount][number]' => '3.00',
+      'configuration[rate_amount][currency_code]' => 'USD',
     ];
     $this->submitForm($edit, 'Save');
 
@@ -103,7 +106,8 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
     $this->assertEquals(TRUE, $shipping_method->status());
     $shipping_method_plugin = $shipping_method->getPlugin();
     $configuration = $shipping_method_plugin->getConfiguration();
-    $this->assertEquals(['number' => '3.00', 'currency_code' => 'USD'], $configuration['amount']);
+    $this->assertEquals('Overnight shipping', $configuration['rate_label']);
+    $this->assertEquals(['number' => '3.00', 'currency_code' => 'USD'], $configuration['rate_amount']);
   }
 
   /**
@@ -115,7 +119,7 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
       'label' => 'For deletion',
       'plugin' => 'flat_rate',
       'configuration' => [
-        'amount' => [
+        'rate_amount' => [
           'number' => '20.00',
           'currency_code' => 'USD',
         ],

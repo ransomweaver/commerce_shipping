@@ -65,6 +65,7 @@ class ShippingMethodForm extends CommercePluginEntityFormBase {
     $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Name'),
+      '#description' => $this->t('Used to identify the shipping method on administration pages.'),
       '#maxlength' => 255,
       '#default_value' => $shipping_method->label(),
       '#required' => TRUE,
