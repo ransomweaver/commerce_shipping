@@ -1,0 +1,12 @@
+commerce_shipping.commerce_package_type.*:
+  type: config_entity
+  label: 'Package type config'
+  mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
+    uuid:
+      type: string
