@@ -4,6 +4,7 @@ namespace Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod;
 
 use Drupal\commerce_price\Price;
 use Drupal\commerce_shipping\Entity\ShipmentInterface;
+use Drupal\commerce_shipping\PackageTypeManagerInterface;
 use Drupal\commerce_shipping\ShippingRate;
 use Drupal\commerce_shipping\ShippingService;
 use Drupal\Core\Form\FormStateInterface;
@@ -27,9 +28,11 @@ class FlatRate extends ShippingMethodBase {
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
+   * @param \Drupal\commerce_shipping\PackageTypeManagerInterface $package_type_manager
+   *   The package type manager.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PackageTypeManagerInterface $package_type_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $package_type_manager);
 
     $this->services['default'] = new ShippingService('default', $this->configuration['rate_label']);
   }

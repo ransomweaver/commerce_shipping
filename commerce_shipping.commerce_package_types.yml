@@ -1,0 +1,8 @@
+custom_box:
+  remote_id: custom
+  label: 'Custom box (1x1x1 mm)'
+  dimensions:
+    length: 1
+    width: 1
+    height: 1
+    unit: 'mm'
