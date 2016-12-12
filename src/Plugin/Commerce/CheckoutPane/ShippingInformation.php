@@ -5,7 +5,7 @@ namespace Drupal\commerce_shipping\Plugin\Commerce\CheckoutPane;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CheckoutPaneBase;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CheckoutPaneInterface;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
-use Drupal\commerce_shipping\Entity\Shipment;
+//use Drupal\commerce_shipping\Entity\Shipment;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -94,18 +94,18 @@ class ShippingInformation extends CheckoutPaneBase implements CheckoutPaneInterf
    * {@inheritdoc}
    */
   public function buildPaneForm(array $pane_form, FormStateInterface $form_state, array &$complete_form) {
-    if (empty($this->order->shipment)) {
+    /*if (empty($this->order->shipment)) {
       $this->order->shipment = $this->entity_type_manager->getStorage('commerce_shipment')->create();
     }
 
     $shipment = $this->order->shipment->entity;
     $shipping_profile = $shipment->getShippingProfile();
-
+*/
     if (!$shipping_profile) {
       $profile_storage = $this->entityTypeManager->getStorage('profile');
       $shipping_profile = $profile_storage->create([
         'type' => 'customer',
-        'uid' => $this->order->getOwnerId(),
+        'uid' => $this->order->getCustomerId(),
       ]);
     }
 
@@ -141,7 +141,7 @@ class ShippingInformation extends CheckoutPaneBase implements CheckoutPaneInterf
     $form_display = EntityFormDisplay::collectRenderDisplay($shipping_profile, 'default');
     $form_display->extractFormValues($shipping_profile, $pane_form, $form_state);
     $shipping_profile->save();
-    $this->order->shipment->setShippingProfile($shipping_profile);
+   // $this->order->shipment->setShippingProfile($shipping_profile);
   }
 
 }
