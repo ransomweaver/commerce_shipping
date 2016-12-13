@@ -2,15 +2,25 @@
 
 namespace Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod;
 
+use Drupal\commerce_shipping\PackageTypeManagerInterface;
 use Drupal\commerce_shipping\ShippingService;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides the base class for shipping methods.
  */
-abstract class ShippingMethodBase extends PluginBase implements ShippingMethodInterface {
+abstract class ShippingMethodBase extends PluginBase implements ContainerFactoryPluginInterface, ShippingMethodInterface {
+
+  /**
+   * The package type manager.
+   *
+   * @var \Drupal\commerce_shipping\PackageTypeManagerInterface
+   */
+  protected $packageTypeManager;
 
   /**
    * The shipping services.
@@ -28,10 +38,13 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
+   * @param \Drupal\commerce_shipping\PackageTypeManagerInterface $package_type_manager
+   *   The package type manager.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PackageTypeManagerInterface $package_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
+    $this->packageTypeManager = $package_type_manager;
     foreach ($this->pluginDefinition['services'] as $id => $label) {
       $this->services[$id] = new ShippingService($id, (string) $label);
     }
@@ -41,8 +54,28 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
   /**
    * {@inheritdoc}
    */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('plugin.manager.commerce_package_type')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getLabel() {
     return (string) $this->pluginDefinition['label'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDefaultPackageType() {
+    $package_type_id = $this->configuration['default_package_type'];
+    return $this->packageTypeManager->createInstance($package_type_id);
   }
 
   /**
@@ -65,6 +98,7 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
    */
   public function defaultConfiguration() {
     return [
+      'default_package_type' => 'default_box',
       'services' => [],
     ];
   }
@@ -87,6 +121,10 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $package_types = $this->packageTypeManager->getDefinitionsByShippingMethod($this->pluginId);
+    $package_types = array_map(function ($package_type) {
+      return $package_type['label'];
+    }, $package_types);
     $services = array_map(function ($service) {
       return $service->getLabel();
     }, $this->services);
@@ -96,6 +134,14 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
       $this->configuration['services'] = array_combine($service_ids, $service_ids);
     }
 
+    $form['default_package_type'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Default package type'),
+      '#options' => $package_types,
+      '#default_value' => $this->configuration['default_package_type'],
+      '#required' => TRUE,
+      '#access' => count($package_types) > 1,
+    ];
     $form['services'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Shipping services'),
@@ -121,6 +167,8 @@ abstract class ShippingMethodBase extends PluginBase implements ShippingMethodIn
       $values = $form_state->getValue($form['#parents']);
       if (!empty($values['services'])) {
         $values['services'] = array_filter($values['services']);
+
+        $this->configuration['default_package_type'] = $values['default_package_type'];
         $this->configuration['services'] = array_keys($values['services']);
       }
     }

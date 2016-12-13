@@ -33,6 +33,9 @@ commerce_shipping.commerce_shipping_method.plugin.flat_rate:
 commerce_shipping_method_configuration:
   type: mapping
   mapping:
+    default_package_type:
+      type: string
+      label: 'Default package type'
     services:
       type: sequence
       label: 'Services'
