@@ -52,12 +52,12 @@ class PackageType extends PluginBase implements PackageTypeInterface {
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
-    $dimensions = $plugin_definition['dimensions'];
+    $dimensions = $plugin_definition['physical_dimensions'];
     $this->length = new Length($dimensions['length'], $dimensions['unit']);
     $this->width = new Length($dimensions['width'], $dimensions['unit']);
     $this->height = new Length($dimensions['height'], $dimensions['unit']);
-    if (!empty($plugin_definition['weight'])) {
-      $weight = $plugin_definition['weight'];
+    if (!empty($plugin_definition['physical_weight'])) {
+      $weight = $plugin_definition['physical_weight'];
       $this->weight = new Weight($weight['number'], $weight['unit']);
     }
   }

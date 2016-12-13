@@ -8,5 +8,12 @@ commerce_shipping.commerce_package_type.*:
     label:
       type: label
       label: 'Label'
-    uuid:
-      type: string
+    weight:
+      type: integer
+      label: 'Weight'
+    physical_dimensions:
+      type: physical_dimension
+      label: 'Physical Dimensions'
+    physical_weight:
+      type: physical_measurement
+      label: 'Physical Weight'

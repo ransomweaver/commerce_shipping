@@ -4,12 +4,9 @@ namespace Drupal\commerce_shipping\Form;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\physical\MeasurementType;
 
-/**
- * Class PackageTypeForm.
- *
- * @package Drupal\commerce_shipping\Form
- */
 class PackageTypeForm extends EntityForm {
 
   /**
@@ -17,8 +14,9 @@ class PackageTypeForm extends EntityForm {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
-
+    /** @var \Drupal\commerce_shipping\Entity\PackageTypeInterface $commerce_package_type */
     $commerce_package_type = $this->entity;
+
     $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
@@ -37,7 +35,19 @@ class PackageTypeForm extends EntityForm {
       '#disabled' => !$commerce_package_type->isNew(),
     ];
 
-    /* You will need additional form elements for your custom properties. */
+    $form['physical_dimensions'] = [
+      '#type' => 'physical_dimension',
+      '#title' => $this->t('Physical Dimension'),
+      '#default_value' => $commerce_package_type->getPhysicalDimensions(),
+      '#required' => TRUE,
+    ];
+
+    $form['physical_weight'] = [
+      '#type' => 'physical_measurement',
+      '#title' => $this->t('Physical Weight'),
+      '#measurement_type' => MeasurementType::WEIGHT,
+      '#default_value' => $commerce_package_type->getPhysicalWeight(),
+    ];
 
     return $form;
   }
@@ -51,17 +61,17 @@ class PackageTypeForm extends EntityForm {
 
     switch ($status) {
       case SAVED_NEW:
-        drupal_set_message($this->t('Created the %label Package type.', [
+        drupal_set_message($this->t('Created the %label package type.', [
           '%label' => $commerce_package_type->label(),
         ]));
         break;
 
       default:
-        drupal_set_message($this->t('Saved the %label Package type.', [
+        drupal_set_message($this->t('Saved the %label package type.', [
           '%label' => $commerce_package_type->label(),
         ]));
     }
-    $form_state->setRedirectUrl($commerce_package_type->urlInfo('collection'));
+    $form_state->setRedirectUrl(Url::fromRoute('entity.commerce_package_type.collection'));
   }
 
 }
