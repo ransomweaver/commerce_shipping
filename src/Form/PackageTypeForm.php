@@ -71,7 +71,7 @@ class PackageTypeForm extends EntityForm {
           '%label' => $commerce_package_type->label(),
         ]));
     }
-    $form_state->setRedirectUrl(Url::fromRoute('entity.commerce_package_type.collection'));
+    $form_state->setRedirect('entity.commerce_package_type.collection');
   }
 
 }

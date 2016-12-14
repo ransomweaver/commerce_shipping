@@ -7,7 +7,7 @@ use Drupal\physical\Plugin\Field\FieldType\DimensionItem;
 use Drupal\physical\Plugin\Field\FieldType\MeasurementItem;
 
 /**
- * Defines the package type entity.
+ * Defines the package type entity class.
  *
  * @ConfigEntityType(
  *   id = "commerce_package_type",
@@ -15,18 +15,18 @@ use Drupal\physical\Plugin\Field\FieldType\MeasurementItem;
  *   label_singular = @Translation("package type"),
  *   label_plural = @Translation("package types"),
  *   label_count = @PluralTranslation(
- *     singular = "@count shipping method",
- *     plural = "@count shipping methods",
+ *     singular = "@count package type",
+ *     plural = "@count package types",
  *   ),
  *   handlers = {
  *     "list_builder" = "Drupal\commerce_shipping\PackageTypeListBuilder",
  *     "form" = {
  *       "add" = "Drupal\commerce_shipping\Form\PackageTypeForm",
  *       "edit" = "Drupal\commerce_shipping\Form\PackageTypeForm",
- *       "delete" = "Drupal\commerce_shipping\Form\PackageTypeDeleteForm"
+ *       "delete" = "Drupal\Core\Entity\EntityDeleteForm"
  *     },
  *     "route_provider" = {
- *       "html" = "Drupal\commerce_shipping\PackageTypeHtmlRouteProvider",
+ *       "default" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
  *     },
  *   },
  *   config_prefix = "commerce_package_type",
@@ -45,11 +45,10 @@ use Drupal\physical\Plugin\Field\FieldType\MeasurementItem;
  *     "physical_weight",
  *   },
  *   links = {
- *     "canonical" = "/admin/commerce/commerce_package_type/{commerce_package_type}",
- *     "add-form" = "/admin/commerce/config/commerce-package-type/add",
- *     "edit-form" = "/admin/commerce/config/commerce-package-type/manage/{commerce_package_type}",
- *     "delete-form" = "/admin/commerce/config/commerce-package-type/manage/{commerce_package_type}/delete",
- *     "collection" = "/admin/commerce/config/commerce-package-types"
+ *     "add-form" = "/admin/commerce/config/package-types/add",
+ *     "edit-form" = "/admin/commerce/config/package-types/manage/{commerce_package_type}",
+ *     "delete-form" = "/admin/commerce/config/package-types/manage/{commerce_package_type}/delete",
+ *     "collection" = "/admin/commerce/config/package-types"
  *   }
  * )
  */

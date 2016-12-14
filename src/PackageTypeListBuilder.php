@@ -14,8 +14,8 @@ class PackageTypeListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header['label'] = $this->t('Package type');
-    $header['id'] = $this->t('Machine name');
+    $header['label'] = $this->t('Package Type');
+    $header['id'] = $this->t('Machine Name');
     $header['physical_dimensions'] = $this->t('Physical Dimensions');
     $header['physical_weight'] = $this->t('Physical Weight');
     return $header + parent::buildHeader();

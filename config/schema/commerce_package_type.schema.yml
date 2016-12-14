@@ -1,10 +1,10 @@
 commerce_shipping.commerce_package_type.*:
   type: config_entity
-  label: 'Package type config'
+  label: 'Package type'
   mapping:
     id:
       type: string
-      label: 'ID'
+      label: 'Machine-readable name'
     label:
       type: label
       label: 'Label'

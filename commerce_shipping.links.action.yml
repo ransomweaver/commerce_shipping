@@ -5,7 +5,7 @@ entity.commerce_shipping_method.add_form:
     - entity.commerce_shipping_method.collection
 entity.commerce_package_type.add_form:
   route_name: 'entity.commerce_package_type.add_form'
-  title: 'Add Package type'
+  title: 'Add package type'
   appears_on:
     - entity.commerce_package_type.collection
 
