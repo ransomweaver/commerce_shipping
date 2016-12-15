@@ -12,8 +12,8 @@ commerce_shipping.commerce_package_type.*:
       type: integer
       label: 'Weight'
     physical_dimensions:
-      type: physical_dimension
+      type: field.value.physical_dimension
       label: 'Physical Dimensions'
     physical_weight:
-      type: physical_measurement
+      type: field.value.physical_measurement
       label: 'Physical Weight'
