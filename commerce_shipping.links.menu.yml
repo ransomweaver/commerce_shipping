@@ -12,3 +12,7 @@ entity.commerce_package_type.collection:
   parent: 'commerce.configuration'
   weight: 99
 
+entity.commerce_package_type:
+  class: \Drupal\commerce_shipping\Plugin\Commerce\PackageType\PackageType
+  deriver: \Drupal\commerce_shipping\Plugin\Deriver\PackageTypeDeriver
+
