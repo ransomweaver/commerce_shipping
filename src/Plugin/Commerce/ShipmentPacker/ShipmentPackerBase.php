@@ -27,6 +27,20 @@ abstract class ShipmentPackerBase extends PluginBase implements ContainerFactory
   /**
    * {@inheritdoc}
    */
+  public function calculateDependencies() {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getConfiguration() {
     return $this->configuration;
   }
