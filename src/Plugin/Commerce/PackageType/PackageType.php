@@ -56,10 +56,8 @@ class PackageType extends PluginBase implements PackageTypeInterface {
     $this->length = new Length($dimensions['length'], $dimensions['unit']);
     $this->width = new Length($dimensions['width'], $dimensions['unit']);
     $this->height = new Length($dimensions['height'], $dimensions['unit']);
-    if (!empty($plugin_definition['weight'])) {
-      $weight = $plugin_definition['weight'];
-      $this->weight = new Weight($weight['number'], $weight['unit']);
-    }
+    $weight = $plugin_definition['weight'];
+    $this->weight = new Weight($weight['number'], $weight['unit']);
   }
 
   /**

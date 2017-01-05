@@ -9,6 +9,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\Core\Plugin\Discovery\ContainerDerivativeDiscoveryDecorator;
 use Drupal\Core\Plugin\Discovery\YamlDiscovery;
+use Drupal\physical\WeightUnit;
 
 /**
  * Manages discovery and instantiation of package type plugins.
@@ -83,6 +84,10 @@ class PackageTypeManager extends DefaultPluginManager implements PackageTypeMana
           throw new PluginException(sprintf('The package type "%s" property "weight" must have a "%s" key.', $plugin_id, $weight_property));
         }
       }
+    }
+    else {
+      // Package types should have a weight value even if they're weightless.
+      $definition['weight'] = ['number' => 0, 'unit' => WeightUnit::GRAM];
     }
   }
 
