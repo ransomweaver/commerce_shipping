@@ -59,6 +59,8 @@ interface PackageTypeInterface {
   /**
    * Gets the package type weight.
    *
+   * This is the weight of an empty package.
+   *
    * @return \Drupal\physical\Weight|null
    *   The package type weight, or NULL if not defined.
    */

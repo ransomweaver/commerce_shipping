@@ -3,3 +3,9 @@ entity.commerce_shipping_method.collection:
   route_name: 'entity.commerce_shipping_method.collection'
   parent: 'commerce.configuration'
   description: 'Manage your shipping methods.'
+
+entity.commerce_package_type.collection:
+  title: 'Package types'
+  route_name: entity.commerce_package_type.collection
+  parent: 'commerce.configuration'
+  description: 'Manage you package types'
