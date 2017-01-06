@@ -30,13 +30,13 @@ class PackageTypeTest extends UnitTestCase {
       'id' => 'test id',
       'remote_id' => 'test remote id',
       'label' => 'test label',
-      'physical_dimensions' => [
+      'dimensions' => [
         'length' => '1',
         'width' => '2',
         'height' => '3',
         'unit' => 'mm',
       ],
-      'physical_weight' => [
+      'weight' => [
         'number' => '4',
         'unit' => 'kg',
       ],
