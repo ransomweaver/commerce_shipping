@@ -2,15 +2,43 @@
 
 namespace Drupal\commerce_shipping\Entity;
 
-use Drupal\Core\Config\Entity\ConfigEntityInterface;
-use Drupal\Core\Entity\EntityWithPluginCollectionInterface;
+use Drupal\commerce_store\Entity\EntityStoresInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 
 /**
- * Defines the interface for shipping method configuration entities.
+ * Defines the interface for shipping methods.
  *
  * Stores configuration for shipping method plugins.
+ * Implemented as a content entity type to allow each store to have its own
+ * shipping methods.
  */
-interface ShippingMethodInterface extends ConfigEntityInterface, EntityWithPluginCollectionInterface {
+interface ShippingMethodInterface extends ContentEntityInterface, EntityStoresInterface {
+
+  /**
+   * Gets the shipping method plugin.
+   *
+   * @return \Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface
+   *   The shipping method plugin.
+   */
+  public function getPlugin();
+
+  /**
+   * Gets the shipping method name.
+   *
+   * @return string
+   *   The shipping method name.
+   */
+  public function getName();
+
+  /**
+   * Sets the shipping method name.
+   *
+   * @param string $name
+   *   The shipping method name.
+   *
+   * @return $this
+   */
+  public function setName($name);
 
   /**
    * Gets the shipping method weight.
@@ -31,29 +59,21 @@ interface ShippingMethodInterface extends ConfigEntityInterface, EntityWithPlugi
   public function setWeight($weight);
 
   /**
-   * Gets the shipping method plugin.
+   * Gets whether the shipping method is enabled.
    *
-   * @return \Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface
-   *   The shipping method plugin.
+   * @return bool
+   *   TRUE if the shipping method is enabled, FALSE otherwise.
    */
-  public function getPlugin();
+  public function isEnabled();
 
   /**
-   * Gets the shipping method plugin ID.
+   * Sets whether the shipping method is enabled.
    *
-   * @return string
-   *   The shipping method plugin ID.
-   */
-  public function getPluginId();
-
-  /**
-   * Sets the shipping method plugin ID.
-   *
-   * @param string $plugin_id
-   *   The shipping method plugin ID.
+   * @param bool $enabled
+   *   Whether the shipping method is enabled.
    *
    * @return $this
    */
-  public function setPluginId($plugin_id);
+  public function setEnabled($enabled);
 
 }

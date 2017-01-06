@@ -2,18 +2,36 @@
 
 namespace Drupal\commerce_shipping;
 
-use Drupal\Core\Config\Entity\DraggableListBuilder;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityListBuilder;
+use Drupal\Core\Form\FormInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Defines the list builder for shipping methods.
  */
-class ShippingMethodListBuilder extends DraggableListBuilder {
+class ShippingMethodListBuilder extends EntityListBuilder implements FormInterface {
 
   /**
-   * {@inheritdoc}
+   * The key to use for the form element containing the entities.
+   *
+   * @var string
    */
   protected $entitiesKey = 'methods';
+
+  /**
+   * The entities being listed.
+   *
+   * @var \Drupal\commerce_shipping\Entity\ShippingMethodInterface[]
+   */
+  protected $entities = [];
+
+  /**
+   * The form builder.
+   *
+   * @var \Drupal\Core\Form\FormBuilderInterface
+   */
+  protected $formBuilder;
 
   /**
    * {@inheritdoc}
@@ -25,9 +43,22 @@ class ShippingMethodListBuilder extends DraggableListBuilder {
   /**
    * {@inheritdoc}
    */
+  public function load() {
+    $entity_ids = $this->getEntityIds();
+    $entities = $this->storage->loadMultiple($entity_ids);
+    // Sort the entities using the entity class's sort() method.
+    uasort($entities, [$this->entityType->getClass(), 'sort']);
+
+    return $entities;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildHeader() {
-    $header['label'] = $this->t('Shipping method');
-    $header['status'] = $this->t('Status');
+    $header['name'] = $this->t('Name');
+    $header['status'] = $this->t('Enabled');
+    $header['weight'] = $this->t('Weight');
     return $header + parent::buildHeader();
   }
 
@@ -36,15 +67,17 @@ class ShippingMethodListBuilder extends DraggableListBuilder {
    */
   public function buildRow(EntityInterface $entity) {
     /** @var \Drupal\commerce_shipping\Entity\ShippingMethodInterface $entity */
-    $status = $entity->status() ? $this->t('Enabled') : $this->t('Disabled');
-    $row['label'] = $entity->label();
-    // $this->weightKey determines whether the table will be rendered as a form.
-    if (!empty($this->weightKey)) {
-      $row['status']['#markup'] = $status;
-    }
-    else {
-      $row['status'] = $status;
-    }
+    $row['#attributes']['class'][] = 'draggable';
+    $row['#weight'] = $entity->getWeight();
+    $row['name'] = $entity->label();
+    $row['status'] = $entity->isEnabled() ? $this->t('Enabled') : $this->t('Disabled');
+    $row['weight'] = [
+      '#type' => 'weight',
+      '#title' => $this->t('Weight for @title', ['@title' => $entity->label()]),
+      '#title_display' => 'invisible',
+      '#default_value' => $entity->getWeight(),
+      '#attributes' => ['class' => ['weight']],
+    ];
 
     return $row + parent::buildRow($entity);
   }
@@ -53,12 +86,75 @@ class ShippingMethodListBuilder extends DraggableListBuilder {
    * {@inheritdoc}
    */
   public function render() {
-    $entities = $this->load();
-    // If there are less than 2 shipping methods, disable dragging.
-    if (count($entities) <= 1) {
-      unset($this->weightKey);
+    return \Drupal::formBuilder()->getForm($this);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $form[$this->entitiesKey] = [
+      '#type' => 'table',
+      '#header' => $this->buildHeader(),
+      '#empty' => $this->t('There is no @label yet.', ['@label' => $this->entityType->getLabel()]),
+      '#tabledrag' => [
+        [
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'weight',
+        ],
+      ],
+    ];
+
+    $this->entities = $this->load();
+    $delta = 10;
+    // Change the delta of the weight field if have more than 20 entities.
+    $count = count($this->entities);
+    if ($count > 20) {
+      $delta = ceil($count / 2);
     }
-    return parent::render();
+    foreach ($this->entities as $entity) {
+      $row = $this->buildRow($entity);
+      if (isset($row['name'])) {
+        $row['name'] = ['#markup' => $row['name']];
+      }
+      if (isset($row['status'])) {
+        $row['status'] = ['#markup' => $row['status']];
+      }
+      if (isset($row['weight'])) {
+        $row['weight']['#delta'] = $delta;
+      }
+      $form[$this->entitiesKey][$entity->id()] = $row;
+    }
+
+    $form['actions']['#type'] = 'actions';
+    $form['actions']['submit'] = [
+      '#type' => 'submit',
+      '#value' => t('Save'),
+      '#button_type' => 'primary',
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    // No validation.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    foreach ($form_state->getValue($this->entitiesKey) as $id => $value) {
+      if (isset($this->entities[$id]) && $this->entities[$id]->getWeight() != $value['weight']) {
+        // Save entity only when its weight was changed.
+        $this->entities[$id]->setWeight($value['weight']);
+        $this->entities[$id]->save();
+      }
+    }
   }
 
 }

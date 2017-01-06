@@ -1,22 +1,3 @@
-commerce_shipping.commerce_shipping_method.*:
-  type: config_entity
-  label: 'Shipping method'
-  mapping:
-    id:
-      type: string
-      label: 'Machine-readable name'
-    label:
-      type: label
-      label: 'Label'
-    weight:
-      type: integer
-      label: 'Weight'
-    plugin:
-      type: string
-      label: 'Plugin'
-    configuration:
-      type: commerce_shipping.commerce_shipping_method.plugin.[%parent.plugin]
-
 commerce_shipping.commerce_shipping_method.plugin.*:
   type: commerce_shipping_method_configuration
 

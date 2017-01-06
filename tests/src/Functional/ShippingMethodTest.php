@@ -3,6 +3,7 @@
 namespace Drupal\Tests\commerce_shipping\Functional;
 
 use Drupal\commerce_shipping\Entity\ShippingMethod;
+use Drupal\commerce_store\StoreCreationTrait;
 use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
 
 /**
@@ -11,6 +12,8 @@ use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
  * @group commerce_shipping
  */
 class ShippingMethodTest extends CommerceBrowserTestBase {
+
+  use StoreCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -29,85 +32,76 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-
-    $currency_importer = \Drupal::service('commerce_price.currency_importer');
-    $currency_importer->import('EUR');
-  }
-
-  /**
    * Tests creating a shipping method.
    */
   public function testShippingMethodCreation() {
+    $this->createStore(NULL, NULL, 'default', TRUE);
+
     $this->drupalGet('admin/commerce/config/shipping-methods');
     $this->getSession()->getPage()->clickLink('Add shipping method');
     $this->assertSession()->addressEquals('admin/commerce/config/shipping-methods/add');
+    $this->assertSession()->fieldExists('name[0][value]');
+    $this->getSession()->getPage()->fillField('plugin[0][target_plugin_id]', 'flat_rate');
 
+    $name = $this->randomMachineName(8);
     $edit = [
-      'label' => 'Example',
-      'status' => '1',
-      'plugin' => 'flat_rate',
-      'configuration[rate_label]' => 'Overnight shipping',
-      'configuration[rate_amount][number]' => '20.00',
-      'configuration[rate_amount][currency_code]' => 'USD',
-      // Setting the 'id' can fail if focus switches to another field.
-      // This is a bug in the machine name JS that can be reproduced manually.
-      'id' => 'example',
+      'name[0][value]' => $name,
+      'plugin[0][target_plugin_configuration][rate_label]' => 'Test label',
+      'plugin[0][target_plugin_configuration][rate_amount][number]' => '10.00',
     ];
+
     $this->submitForm($edit, 'Save');
     $this->assertSession()->addressEquals('admin/commerce/config/shipping-methods');
-    $this->assertSession()->responseContains('Example');
+    $this->assertSession()->pageTextContains("Saved the $name shipping method.");
+    $shipping_method_count = $this->getSession()->getPage()->find('xpath', '//table/tbody/tr/td[text()="' . $name . '"]');
+    $this->assertEquals(count($shipping_method_count), 1, 'shipping method exists in the table.');
 
-    $shipping_method = ShippingMethod::load('example');
-    $this->assertEquals('example', $shipping_method->id());
-    $this->assertEquals('Example', $shipping_method->label());
-    $this->assertEquals('flat_rate', $shipping_method->getPluginId());
-    $this->assertEquals(TRUE, $shipping_method->status());
-    $shipping_method_plugin = $shipping_method->getPlugin();
-    $configuration = $shipping_method_plugin->getConfiguration();
-    $this->assertEquals('Overnight shipping', $configuration['rate_label']);
-    $this->assertEquals(['number' => '20.00', 'currency_code' => 'USD'], $configuration['rate_amount']);
+    $shipping_method = ShippingMethod::load(1);
+    $plugin = $shipping_method->getPlugin();
+    $this->assertEquals(['number' => '10.00', 'currency_code' => 'USD'], $plugin->getConfiguration()['rate_amount']);
   }
 
   /**
    * Tests editing a shipping method.
    */
   public function testShippingMethodEditing() {
-    $values = [
-      'id' => 'edit_example',
-      'label' => 'Edit example',
-      'plugin' => 'flat_rate',
-      'configuration' => [
-        'rate_label' => 'Overnight shipping',
-        'rate_amount' => [
-          'number' => '20.00',
-          'currency_code' => 'USD',
+    $this->createStore(NULL, NULL, 'default', TRUE);
+
+    $shipping_method = $this->createEntity('commerce_shipping_method', [
+      'name' => $this->randomMachineName(8),
+      'status' => TRUE,
+      'plugin' => [
+        'target_plugin_id' => 'flat_rate',
+        'target_plugin_configuration' => [
+          'rate_label' => 'Test label',
+          'rate_amount' => [
+            'number' => '10.00',
+            'currency_code' => 'USD',
+          ],
         ],
       ],
-      'status' => TRUE,
-    ];
-    $shipping_method = $this->createEntity('commerce_shipping_method', $values);
+    ]);
 
-    $this->drupalGet('admin/commerce/config/shipping-methods/manage/' . $shipping_method->id());
+    /** @var \Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface $plugin */
+    $plugin = $shipping_method->getPlugin();
+    $this->assertEquals(['number' => '10.00', 'currency_code' => 'USD'], $plugin->getConfiguration()['rate_amount']);
+
+    $this->drupalGet($shipping_method->toUrl('edit-form'));
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->fieldExists('name[0][value]');
+    $new_shipping_method_name = $this->randomMachineName(8);
     $edit = [
-      'configuration[rate_amount][number]' => '3.00',
-      'configuration[rate_amount][currency_code]' => 'USD',
+      'name[0][value]' => $new_shipping_method_name,
+      'plugin[0][target_plugin_configuration][rate_amount][number]' => '20.00',
     ];
     $this->submitForm($edit, 'Save');
 
-    \Drupal::entityTypeManager()->getStorage('commerce_shipping_method')->resetCache();
-    $shipping_method = ShippingMethod::load('edit_example');
-    $this->assertEquals('edit_example', $shipping_method->id());
-    $this->assertEquals('Edit example', $shipping_method->label());
-    $this->assertEquals('flat_rate', $shipping_method->getPluginId());
-    $this->assertEquals(TRUE, $shipping_method->status());
-    $shipping_method_plugin = $shipping_method->getPlugin();
-    $configuration = $shipping_method_plugin->getConfiguration();
-    $this->assertEquals('Overnight shipping', $configuration['rate_label']);
-    $this->assertEquals(['number' => '3.00', 'currency_code' => 'USD'], $configuration['rate_amount']);
+    \Drupal::service('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
+    $shipping_method_changed = ShippingMethod::load($shipping_method->id());
+    $this->assertEquals($new_shipping_method_name, $shipping_method_changed->getName(), 'The shipping method name successfully updated.');
+    /** @var \Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface $plugin */
+    $plugin = $shipping_method_changed->getPlugin();
+    $this->assertEquals(['number' => '20.00', 'currency_code' => 'USD'], $plugin->getConfiguration()['rate_amount']);
   }
 
   /**
@@ -115,22 +109,16 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
    */
   public function testShippingMethodDeletion() {
     $shipping_method = $this->createEntity('commerce_shipping_method', [
-      'id' => 'for_deletion',
-      'label' => 'For deletion',
-      'plugin' => 'flat_rate',
-      'configuration' => [
-        'rate_amount' => [
-          'number' => '20.00',
-          'currency_code' => 'USD',
-        ],
-      ],
+      'name' => $this->randomMachineName(8),
     ]);
-    $this->drupalGet('admin/commerce/config/shipping-methods/manage/' . $shipping_method->id() . '/delete');
-    $this->submitForm([], 'Delete');
-    $this->assertSession()->addressEquals('admin/commerce/config/shipping-methods');
+    $this->drupalGet($shipping_method->toUrl('delete-form'));
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->pageTextContains('This action cannot be undone.');
+    $this->submitForm([], t('Delete'));
 
-    $shipping_method_exists = (bool) ShippingMethod::load('for_deletion');
-    $this->assertFalse($shipping_method_exists, 'The shipping method has been deleted from the database.');
+    \Drupal::service('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
+    $shipping_method_exists = (bool) ShippingMethod::load($shipping_method->id());
+    $this->assertFalse($shipping_method_exists, 'The new shipping method has been deleted from the database using UI.');
   }
 
 }

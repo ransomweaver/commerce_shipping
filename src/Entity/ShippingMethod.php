@@ -2,13 +2,15 @@
 
 namespace Drupal\commerce_shipping\Entity;
 
-use Drupal\commerce_shipping\ShippingMethodPluginCollection;
-use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 
 /**
  * Defines the shipping method entity class.
  *
- * @ConfigEntityType(
+ * @ContentEntityType(
  *   id = "commerce_shipping_method",
  *   label = @Translation("Shipping method"),
  *   label_singular = @Translation("shipping method"),
@@ -18,33 +20,31 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     plural = "@count shipping methods",
  *   ),
  *   handlers = {
+ *     "storage" = "Drupal\commerce\CommerceContentEntityStorage",
+ *     "access" = "Drupal\commerce\EntityAccessControlHandler",
+ *     "permission_provider" = "Drupal\commerce\EntityPermissionProvider",
  *     "list_builder" = "Drupal\commerce_shipping\ShippingMethodListBuilder",
- *     "storage" = "Drupal\Core\Config\Entity\ConfigEntityStorage",
  *     "form" = {
+ *       "default" = "Drupal\commerce_shipping\Form\ShippingMethodForm",
  *       "add" = "Drupal\commerce_shipping\Form\ShippingMethodForm",
  *       "edit" = "Drupal\commerce_shipping\Form\ShippingMethodForm",
- *       "delete" = "Drupal\Core\Entity\EntityDeleteForm"
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm"
  *     },
  *     "route_provider" = {
  *       "default" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
  *     },
+ *     "translation" = "Drupal\content_translation\ContentTranslationHandler"
  *   },
+ *   base_table = "commerce_shipping_method",
+ *   data_table = "commerce_shipping_method_field_data",
  *   admin_permission = "administer commerce_shipping_method",
- *   config_prefix = "commerce_shipping_method",
+ *   translatable = TRUE,
  *   entity_keys = {
- *     "id" = "id",
- *     "label" = "label",
+ *     "id" = "shipping_method_id",
+ *     "label" = "name",
+ *     "langcode" = "langcode",
  *     "uuid" = "uuid",
- *     "weight" = "weight",
  *     "status" = "status",
- *   },
- *   config_export = {
- *     "id",
- *     "label",
- *     "weight",
- *     "status",
- *     "plugin",
- *     "configuration",
  *   },
  *   links = {
  *     "add-form" = "/admin/commerce/config/shipping-methods/add",
@@ -54,111 +54,185 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *   }
  * )
  */
-class ShippingMethod extends ConfigEntityBase implements ShippingMethodInterface {
-
-  /**
-   * The shipping method ID.
-   *
-   * @var string
-   */
-  protected $id;
-
-  /**
-   * The shipping method label.
-   *
-   * @var string
-   */
-  protected $label;
-
-  /**
-   * The shipping method weight.
-   *
-   * @var int
-   */
-  protected $weight;
-
-  /**
-   * The plugin ID.
-   *
-   * @var string
-   */
-  protected $plugin;
-
-  /**
-   * The plugin configuration.
-   *
-   * @var array
-   */
-  protected $configuration = [];
-
-  /**
-   * The plugin collection that holds the shipping method plugin.
-   *
-   * @var \Drupal\commerce_shipping\ShippingMethodPluginCollection
-   */
-  protected $pluginCollection;
+class ShippingMethod extends ContentEntityBase implements ShippingMethodInterface {
 
   /**
    * {@inheritdoc}
    */
-  public function getWeight() {
-    return $this->weight;
+  public function getStores() {
+    return $this->get('stores')->referencedEntities();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setWeight($weight) {
-    $this->weight = $weight;
-    return $weight;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPlugin() {
-    return $this->getPluginCollection()->get($this->plugin);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPluginId() {
-    return $this->plugin;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setPluginId($plugin_id) {
-    $this->plugin = $plugin_id;
-    $this->pluginCollection = NULL;
+  public function setStores(array $stores) {
+    $this->set('stores', $stores);
     return $this;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getPluginCollections() {
-    return [
-      'configuration' => $this->getPluginCollection(),
-    ];
+  public function getStoreIds() {
+    $store_ids = [];
+    foreach ($this->get('stores') as $field_item) {
+      $store_ids[] = $field_item->target_id;
+    }
+    return $store_ids;
   }
 
   /**
-   * Gets the plugin collection that holds the shipping method plugin.
-   *
-   * Ensures the plugin collection is initialized before returning it.
-   *
-   * @return \Drupal\commerce_shipping\ShippingMethodPluginCollection
-   *   The plugin collection.
+   * {@inheritdoc}
    */
-  protected function getPluginCollection() {
-    if (!$this->pluginCollection) {
-      $plugin_manager = \Drupal::service('plugin.manager.commerce_shipping_method');
-      $this->pluginCollection = new ShippingMethodPluginCollection($plugin_manager, $this->plugin, $this->configuration, $this->id);
+  public function setStoreIds(array $store_ids) {
+    $this->set('stores', $store_ids);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPlugin() {
+    return $this->get('plugin')->first()->getTargetInstance();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getName() {
+    return $this->get('name')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setName($name) {
+    $this->set('name', $name);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getWeight() {
+    return (int) $this->get('weight')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setWeight($weight) {
+    $this->set('weight', $weight);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isEnabled() {
+    return (bool) $this->getEntityKey('status');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setEnabled($enabled) {
+    $this->set('status', (bool) $enabled);
+    return $this;
+  }
+
+  /**
+   * Helper callback for uasort() to sort shipping methods by weight and label.
+   *
+   * @param \Drupal\commerce_shipping\Entity\ShippingMethodInterface $a
+   *   The first shipping method to sort.
+   * @param \Drupal\commerce_shipping\Entity\ShippingMethodInterface $b
+   *   The second shipping method to sort.
+   *
+   * @return int
+   *   The comparison result for uasort().
+   */
+  public static function sort(ShippingMethodInterface $a, ShippingMethodInterface $b) {
+    $a_weight = $a->getWeight();
+    $b_weight = $b->getWeight();
+    if ($a_weight == $b_weight) {
+      $a_label = $a->label();
+      $b_label = $b->label();
+      return strnatcasecmp($a_label, $b_label);
     }
-    return $this->pluginCollection;
+    return ($a_weight < $b_weight) ? -1 : 1;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+    $fields = parent::baseFieldDefinitions($entity_type);
+
+    $fields['stores'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Stores'))
+      ->setDescription(t('The stores for which the shipping method is valid.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setRequired(TRUE)
+      ->setSetting('target_type', 'commerce_store')
+      ->setSetting('handler', 'default')
+      ->setDisplayOptions('form', [
+        'type' => 'commerce_entity_select',
+        'weight' => 0,
+      ]);
+
+    $fields['plugin'] = BaseFieldDefinition::create('commerce_plugin_item:commerce_shipping_method')
+      ->setLabel(t('Plugin'))
+      ->setCardinality(1)
+      ->setRequired(TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'commerce_plugin_radios',
+        'weight' => 1,
+      ]);
+
+    $fields['name'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Name'))
+      ->setDescription(t('The shipping method name.'))
+      ->setRequired(TRUE)
+      ->setTranslatable(TRUE)
+      ->setSettings([
+        'default_value' => '',
+        'max_length' => 255,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => 0,
+      ])
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayConfigurable('form', TRUE);
+
+    $fields['weight'] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Weight'))
+      ->setDescription(t('The weight of this shipping method in relation to others.'))
+      ->setDefaultValue(0)
+      ->setDisplayOptions('view', array(
+        'label' => 'hidden',
+        'type' => 'integer',
+        'weight' => 0,
+      ))
+      ->setDisplayOptions('form', array(
+        'type' => 'hidden',
+      ));
+
+    $fields['status'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('Enabled'))
+      ->setDescription(t('Whether the shipping method is enabled.'))
+      ->setDefaultValue(TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'boolean_checkbox',
+        'settings' => [
+          'display_label' => TRUE,
+        ],
+        'weight' => 20,
+      ]);
+
+    return $fields;
   }
 
 }

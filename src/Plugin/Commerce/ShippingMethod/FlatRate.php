@@ -53,6 +53,12 @@ class FlatRate extends ShippingMethodBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
+    $amount = $this->configuration['rate_amount'];
+    // A bug in the plugin_select form element causes $amount to be incomplete.
+    if (isset($amount) && !isset($amount['number'], $amount['currency_code'])) {
+      $amount = NULL;
+    }
+
     $form['rate_label'] = [
       '#type' => 'textfield',
       '#title' => t('Rate label'),
@@ -63,7 +69,7 @@ class FlatRate extends ShippingMethodBase {
     $form['rate_amount'] = [
       '#type' => 'commerce_price',
       '#title' => t('Rate amount'),
-      '#default_value' => $this->configuration['rate_amount'],
+      '#default_value' => $amount,
       '#required' => TRUE,
     ];
 
