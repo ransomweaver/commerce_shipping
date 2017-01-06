@@ -5,5 +5,3 @@ administer commerce_shipping_method:
 administer commerce_package_type:
   title: 'Administer package types'
   'restrict access': TRUE
-
-

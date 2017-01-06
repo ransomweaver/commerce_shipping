@@ -3,8 +3,14 @@
 namespace Drupal\commerce_shipping\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\EntityMalformedException;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\physical\LengthUnit;
+use Drupal\physical\Measurement;
 use Drupal\physical\Plugin\Field\FieldType\DimensionItem;
 use Drupal\physical\Plugin\Field\FieldType\MeasurementItem;
+use Drupal\physical\Weight;
+use Drupal\physical\WeightUnit;
 
 /**
  * Defines the package type entity class.
@@ -35,14 +41,12 @@ use Drupal\physical\Plugin\Field\FieldType\MeasurementItem;
  *     "id" = "id",
  *     "label" = "label",
  *     "uuid" = "uuid",
- *     "weight" = "weight",
  *   },
  *   config_export = {
  *     "id",
  *     "label",
+ *     "dimensions",
  *     "weight",
- *     "physical_dimensions",
- *     "physical_weight",
  *   },
  *   links = {
  *     "add-form" = "/admin/commerce/config/package-types/add",
@@ -69,25 +73,33 @@ class PackageType extends ConfigEntityBase implements PackageTypeInterface {
   protected $label;
 
   /**
-   * The package type weight (not physical)
+   * The package type dimensions.
    *
-   * @var int
+   * @var array
+   */
+  protected $dimensions;
+
+  /**
+   * The package type weight.
+   *
+   * @var array
    */
   protected $weight;
 
   /**
-   * The package type physical dimensions.
-   *
-   * @var \Drupal\physical\Plugin\Field\FieldType\DimensionItem
+   * {@inheritdoc}
    */
-  protected $physical_dimensions;
+  public function getDimensions() {
+    return $this->dimensions;
+  }
 
   /**
-   * The package type physical weight.
-   *
-   * @var \Drupal\physical\Plugin\Field\FieldType\MeasurementItem
+   * {@inheritdoc}
    */
-  protected $physical_weight;
+  public function setDimensions(array $dimensions) {
+    $this->dimensions = $dimensions;
+    return $this;
+  }
 
   /**
    * {@inheritdoc}
@@ -99,7 +111,7 @@ class PackageType extends ConfigEntityBase implements PackageTypeInterface {
   /**
    * {@inheritdoc}
    */
-  public function setWeight($weight) {
+  public function setWeight(array $weight) {
     $this->weight = $weight;
     return $this;
   }
@@ -107,30 +119,23 @@ class PackageType extends ConfigEntityBase implements PackageTypeInterface {
   /**
    * {@inheritdoc}
    */
-  public function getPhysicalDimensions() {
-    return $this->physical_dimensions;
+  public function preSave(EntityStorageInterface $storage) {
+    parent::preSave($storage);
+
+    // Validate the dimensions and the weight. Can't be done
+    // earlier because of the multiple ways a field can be set.
+    foreach (['length', 'width', 'height', 'unit'] as $property) {
+      if (!array_key_exists($property, (array) $this->dimensions)) {
+        throw new EntityMalformedException('The dimensions field must have length, width, height, unit properties.');
+      }
+    }
+    foreach (['number', 'unit'] as $property) {
+      if (!array_key_exists($property, (array) $this->weight)) {
+        throw new EntityMalformedException('The weight field must have number, unit properties.');
+      }
+    }
+    LengthUnit::assertExists($this->dimensions['unit']);
+    WeightUnit::assertExists($this->weight['unit']);
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function setPhysicalDimensions(DimensionItem $physical_dimensions) {
-    $this->physical_dimensions = $physical_dimensions;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPhysicalWeight() {
-    return $this->physical_weight;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setPhysicalWeight(MeasurementItem $physical_weight) {
-    $this->physical_weight = $physical_weight;
-    return $this;
-  }
 }

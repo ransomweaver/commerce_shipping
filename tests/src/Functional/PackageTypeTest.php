@@ -45,12 +45,15 @@ class PackageTypeTest extends CommerceBrowserTestBase {
 
     $edit = [
       'label' => 'Example',
-      'physical_dimensions[length]' => '20',
-      'physical_dimensions[width]' => '10',
-      'physical_dimensions[height]' => '10',
-      'physical_dimensions[unit]' => 'in',
-      'physical_weight[number]' => '10',
-      'physical_weight[unit]' => 'oz',
+      'dimensions[length]' => '20',
+      'dimensions[width]' => '10',
+      'dimensions[height]' => '10',
+      'dimensions[unit]' => 'in',
+      'weight[number]' => '10',
+      'weight[unit]' => 'oz',
+      // Setting the 'id' can fail if focus switches to another field.
+      // This is a bug in the machine name JS that can be reproduced manually.
+      'id' => 'example',
     ];
     $this->submitForm($edit, 'Save');
     $this->assertSession()->addressEquals('admin/commerce/config/package-types');
@@ -59,12 +62,12 @@ class PackageTypeTest extends CommerceBrowserTestBase {
     $package_type = PackageType::load('example');
     $this->assertEquals('example', $package_type->id());
     $this->assertEquals('Example', $package_type->label());
-    $this->assertEquals('20', $package_type->getPhysicalDimensions()['length']);
-    $this->assertEquals('10', $package_type->getPhysicalDimensions()['width']);
-    $this->assertEquals('10', $package_type->getPhysicalDimensions()['height']);
-    $this->assertEquals('in', $package_type->getPhysicalDimensions()['unit']);
-    $this->assertEquals('10', $package_type->getPhysicalWeight()['number']);
-    $this->assertEquals('oz', $package_type->getPhysicalWeight()['unit']);
+    $this->assertEquals('20', $package_type->getDimensions()['length']);
+    $this->assertEquals('10', $package_type->getDimensions()['width']);
+    $this->assertEquals('10', $package_type->getDimensions()['height']);
+    $this->assertEquals('in', $package_type->getDimensions()['unit']);
+    $this->assertEquals('10', $package_type->getWeight()['number']);
+    $this->assertEquals('oz', $package_type->getWeight()['unit']);
   }
 
   /**
@@ -74,18 +77,24 @@ class PackageTypeTest extends CommerceBrowserTestBase {
     $values = [
       'id' => 'edit_example',
       'label' => 'Edit example',
-      'physical_dimensions[length]' => '15',
-      'physical_dimensions[width]' => '15',
-      'physical_dimensions[height]' => '15',
-      'physical_dimensions[unit]' => 'm',
+      'dimensions' => [
+        'length' => '15',
+        'width' => '15',
+        'height' => '15',
+        'unit' => 'm',
+      ],
+      'weight' => [
+        'number' => 0,
+        'unit' => 'g',
+      ],
     ];
     $package_type = $this->createEntity('commerce_package_type', $values);
 
     $this->drupalGet('admin/commerce/config/package-types/manage/' . $package_type->id());
     $edit = [
-      'physical_dimensions[length]' => '20',
-      'physical_weight[number]' => '2',
-      'physical_weight[unit]' => 'lb',
+      'dimensions[length]' => '20',
+      'weight[number]' => '2',
+      'weight[unit]' => 'lb',
     ];
     $this->submitForm($edit, 'Save');
 
@@ -93,12 +102,12 @@ class PackageTypeTest extends CommerceBrowserTestBase {
     $package_type = PackageType::load('edit_example');
     $this->assertEquals('edit_example', $package_type->id());
     $this->assertEquals('Edit example', $package_type->label());
-    $this->assertEquals('20', $package_type->getPhysicalDimensions()['length']);
-    $this->assertEquals('15', $package_type->getPhysicalDimensions()['width']);
-    $this->assertEquals('15', $package_type->getPhysicalDimensions()['height']);
-    $this->assertEquals('m', $package_type->getPhysicalDimensions()['unit']);
-    $this->assertEquals('2', $package_type->getPhysicalWeight()['number']);
-    $this->assertEquals('lb', $package_type->getPhysicalWeight()['unit']);
+    $this->assertEquals('20', $package_type->getDimensions()['length']);
+    $this->assertEquals('15', $package_type->getDimensions()['width']);
+    $this->assertEquals('15', $package_type->getDimensions()['height']);
+    $this->assertEquals('m', $package_type->getDimensions()['unit']);
+    $this->assertEquals('2', $package_type->getWeight()['number']);
+    $this->assertEquals('lb', $package_type->getWeight()['unit']);
   }
 
   /**
@@ -108,12 +117,16 @@ class PackageTypeTest extends CommerceBrowserTestBase {
     $package_type = $this->createEntity('commerce_package_type', [
       'id' => 'for_deletion',
       'label' => 'For deletion',
-      'physical_dimensions[length]' => '20',
-      'physical_dimensions[width]' => '20',
-      'physical_dimensions[height]' => '20',
-      'physical_dimensions[unit]' => 'in',
-      'physical_weight[number]' => '5',
-      'physical_weight[unit]' => 'lb'
+      'dimensions' => [
+        'length' => '15',
+        'width' => '15',
+        'height' => '15',
+        'unit' => 'm',
+      ],
+      'weight' => [
+        'number' => 0,
+        'unit' => 'g',
+      ],
     ]);
     $this->drupalGet('admin/commerce/config/package-types/manage/' . $package_type->id() . '/delete');
     $this->submitForm([], 'Delete');

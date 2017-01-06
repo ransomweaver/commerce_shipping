@@ -6,5 +6,6 @@ core: 8.x
 configure: commerce_shipping.admin_overview
 dependencies:
   - commerce
+  - commerce_order
   - commerce_price
   - physical

@@ -4,11 +4,8 @@ entity.commerce_shipping_method.collection:
   parent: 'commerce.configuration'
   description: 'Manage your shipping methods.'
 
-# Package type menu items definition
 entity.commerce_package_type.collection:
   title: 'Package types'
   route_name: entity.commerce_package_type.collection
-  description: 'Manage you package types'
   parent: 'commerce.configuration'
-  weight: 99
-
+  description: 'Manage you package types'

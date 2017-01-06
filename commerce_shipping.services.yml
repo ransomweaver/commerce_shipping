@@ -1,4 +1,9 @@
 services:
+  commerce_shipping.referenceable_plugin_types_subscriber:
+    class: Drupal\commerce_shipping\EventSubscriber\ReferenceablePluginTypesSubscriber
+    tags:
+      - { name: event_subscriber }
+
   plugin.manager.commerce_shipping_method:
     class: Drupal\commerce_shipping\ShippingMethodManager
     parent: default_plugin_manager
