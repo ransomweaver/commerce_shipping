@@ -7,3 +7,4 @@ configure: commerce_shipping.admin_overview
 dependencies:
   - commerce
   - commerce_price
+  - physical

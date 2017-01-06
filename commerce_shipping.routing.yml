@@ -5,3 +5,11 @@ entity.commerce_shipping_method.collection:
     _title: 'Shipping methods'
   requirements:
     _permission: 'administer commerce_shipping_method'
+
+entity.commerce_package_type.collection:
+  path: '/admin/commerce/config/package-types'
+  defaults:
+    _entity_list: 'commerce_package_type'
+    _title: 'Package types'
+  requirements:
+    _permission: 'administer commerce_package_type'

@@ -33,8 +33,28 @@ commerce_shipping.commerce_shipping_method.plugin.flat_rate:
 commerce_shipping_method_configuration:
   type: mapping
   mapping:
+    default_package_type:
+      type: string
+      label: 'Default package type'
     services:
       type: sequence
       label: 'Services'
       sequence:
         type: string
+
+commerce_shipping.commerce_package_type.*:
+  type: config_entity
+  label: 'Package type'
+  mapping:
+    id:
+      type: string
+      label: 'Machine-readable name'
+    label:
+      type: label
+      label: 'Label'
+    dimensions:
+      type: field.value.physical_dimensions
+      label: 'Dimensions'
+    weight:
+      type: field.value.physical_measurement
+      label: 'Weight'
